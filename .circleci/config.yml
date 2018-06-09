@@ -1,8 +1,8 @@
 version: 2
 jobs:
   build:
-   machine:
-     image: ubuntu:16.04
+    docker:
+      - image: debian:stretch
     environment:
       ZFS_BUILD_TAGS=0
       ZFS_BUILD_TAGS=1
@@ -12,6 +12,7 @@ jobs:
       - run: apt-get install -y software-properties-common
       - run: add-apt-repository ppa:ubuntu-toolchain-r/test
       - run: apt-get install --yes gcc-6 g++-6
+      - run: apt-get install --install-recommends linux-generic-lts-xenial xserver-xorg-core-lts-xenial xserver-xorg-lts-xenial xserver-xorg-video-all-lts-xenial xserver-xorg-input-all-lts-xenial libwayland-egl1-mesa-lts-xenial
       - run: apt-get install --yes build-essential autoconf libtool gawk alien fakeroot linux-headers-$(uname -r) libaio-dev
       - run: apt-get install --yes zlib1g-dev uuid-dev libattr1-dev libblkid-dev libselinux-dev libudev-dev libssl-dev
       - run: apt-get install --yes lcov libjemalloc-dev
