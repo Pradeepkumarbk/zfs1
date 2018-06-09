@@ -7,7 +7,6 @@ jobs:
       CODECOV_TOKEN="96de2ea3-9e75-4db3-a83a-31b9580a795b"
       ZFS_BUILD_TAGS=0
       ZFS_BUILD_TAGS=1
-    working_directory: github.com/openebs/zfs
     steps:
       - checkout
       - run: add-apt-repository -y ppa:ubuntu-toolchain-r/test
