@@ -1,8 +1,7 @@
 version: 2
 jobs:
   build:
-    docker:
-      - image: debian:stretch
+    machine: true
    environment:
      global:
        # Travis limits maximum log size, we have to cut tests output 
