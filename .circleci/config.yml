@@ -12,11 +12,11 @@ jobs:
       - run: apt-get install -y software-properties-common
       - run: add-apt-repository ppa:ubuntu-toolchain-r/test
       - run: apt-get install --yes gcc-6 g++-6
-      - run: apt-get install --yes -qq build-essential autoconf libtool gawk alien fakeroot linux-headers-$(uname -r) libaio-dev
-      - run: apt-get install --yes -qq zlib1g-dev uuid-dev libattr1-dev libblkid-dev libselinux-dev libudev-dev libssl-dev
-      - run: apt-get install --yes -qq lcov libjemalloc-dev
-      - run: apt-get install --yes -qq parted lsscsi ksh attr acl nfs-kernel-server fio
-      - run: apt-get install --yes -qq libgtest-dev cmake
+      - run: apt-get install --yes build-essential autoconf libtool gawk alien fakeroot linux-headers-$(uname -r) libaio-dev
+      - run: apt-get install --yes zlib1g-dev uuid-dev libattr1-dev libblkid-dev libselinux-dev libudev-dev libssl-dev
+      - run: apt-get install --yes lcov libjemalloc-dev
+      - run: apt-get install --yes parted lsscsi ksh attr acl nfs-kernel-server fio
+      - run: apt-get install --yes libgtest-dev cmake
       - run: apt-get install gdb
       - run: unlink /usr/bin/gcc && ln -s /usr/bin/gcc-6 /usr/bin/gcc
       - run: unlink /usr/bin/g++ && ln -s /usr/bin/g++-6 /usr/bin/g++
