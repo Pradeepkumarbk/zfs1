@@ -1,8 +1,8 @@
 version: 2
 jobs:
   build:
-    docker:
-      - image: debian:stretch
+    machine:
+      - image: true
     environment:
       ZFS_BUILD_TAGS=0
       ZFS_BUILD_TAGS=1
