@@ -4,10 +4,7 @@ jobs:
     docker:
       - image: debian:stretch
     environment:
-      # Travis limits maximum log size, we have to cut tests output 
       CODECOV_TOKEN="96de2ea3-9e75-4db3-a83a-31b9580a795b"
-      # ZFS_TEST_TRAVIS_LOG_MAX_LENGTH=800
-      # tags are mainly in ascending order
       ZFS_BUILD_TAGS=0
       ZFS_BUILD_TAGS=1
     working_directory: github.com/openebs/zfs
