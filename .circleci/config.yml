@@ -4,11 +4,11 @@ jobs:
     docker:
       - image: debian:stretch
     environment:
-      CODECOV_TOKEN="96de2ea3-9e75-4db3-a83a-31b9580a795b"
       ZFS_BUILD_TAGS=0
       ZFS_BUILD_TAGS=1
     steps:
       - checkout
+      - run: apt-get install -y software-properties-common
       - run: add-apt-repository ppa:ubuntu-toolchain-r/test
       - run: apt-get update 
       - run: apt-get install --yes gcc-6 g++-6
