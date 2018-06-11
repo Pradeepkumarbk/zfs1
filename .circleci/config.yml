@@ -36,24 +36,28 @@ jobs:
             cp *.a /usr/lib
             popd
             cd ..
-      - run: git clone https://github.com/axboe/fio
-      - run: cd fio
-      - run: git checkout 2e4ef4fbd69eb6d4c07f2f362463e3f3df2e808c
-      - run: ./configure
-      - run: make -j4
-      - run: cd ..
-      - run: git clone https://github.com/openebs/spl
-      - run: cd spl
-      - run: git checkout spl-0.7.4
-      - run: sh autogen.sh
-      - run: ./configure
-      - run: if [ $ZFS_BUILD_TAGS = 0 ]; then
+      - run:
+          command: |
+            git clone https://github.com/axboe/fio
+            cd fio
+            git checkout 2e4ef4fbd69eb6d4c07f2f362463e3f3df2e808c
+            ./configure
+            make -j4
+            cd ..
+      - run:
+          command: |
+            git clone https://github.com/openebs/spl
+            cd spl
+            git checkout spl-0.7.4
+            sh autogen.sh
+            ./configure
+            if [ $ZFS_BUILD_TAGS = 0 ]; then
               make -j4;
             else
               make --no-print-directory -s pkg-utils pkg-kmod;
               dpkg -i *.deb;
             fi
-      - run: cd ../zfs
+            cd ../zfs
       - run: sh autogen.sh
       - run: if [ $ZFS_BUILD_TAGS = 0 ]; then
               ./configure --with-config=user --enable-code-coverage=yes --enable-debug --enable-uzfs=yes --with-jemalloc --with-fio=$PWD/../fio || true;
