@@ -6,12 +6,8 @@ jobs:
     environment:
       ZFS_BUILD_TAGS=0
       ZFS_BUILD_TAGS=1
-    working_directory: ~/Pradeepkumarbk/zfs
     steps:
       - checkout
-      - run: apt-get update 
-      - run: apt-get install -y git
-      - run: git clone https://github.com/Pradeepkumarbk/zfs1.git Pradeepkumarbk/zfs
       - run: apt-get update
       - run: apt-get install -y software-properties-common
       - run: add-apt-repository ppa:ubuntu-toolchain-r/test
@@ -26,13 +22,13 @@ jobs:
       - run: apt-get install -y parted lsscsi ksh attr acl nfs-kernel-server fio
       # - run: apt-get install -y libgtest-dev cmake
       # - run: apt-get install -y libgtest0 libgtest-dev 
-      # - run: apt-get install -y libgtest-dev cmake
+      - run: apt-get install -y libgtest-dev cmake
       - run: apt-get install -y gdb
       - run: unlink /usr/bin/gcc && ln -s /usr/bin/gcc-6 /usr/bin/gcc
       - run: unlink /usr/bin/g++ && ln -s /usr/bin/g++-6 /usr/bin/g++
-      - run: apt-get install libgtest-dev
-      - run: apt-get install -y cmake
-      # - run: pushd .
+      - run: pushd .
+      - run: cd
+      - run: ls
       - run: cd /usr/src/gtest
       - run: ls
       - run: cmake CMakeLists.txt
