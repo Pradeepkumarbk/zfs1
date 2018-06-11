@@ -31,7 +31,7 @@ jobs:
       - run: unlink /usr/bin/gcc && ln -s /usr/bin/gcc-6 /usr/bin/gcc
       - run: unlink /usr/bin/g++ && ln -s /usr/bin/g++-6 /usr/bin/g++
       - run: apt-get install libgtest-dev
-      - run: apt-get install cmake
+      - run: apt-get install -y cmake
       # - run: pushd .
       - run: cd /usr/src/gtest
       - run: ls
