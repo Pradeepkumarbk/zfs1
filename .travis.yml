@@ -2,7 +2,7 @@ language: c
 sudo: required
 branches:
   only:
-    - zfs-0.7-release
+    - master
 env:
   global:
     # Travis limits maximum log size, we have to cut tests output 
