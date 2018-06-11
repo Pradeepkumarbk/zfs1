@@ -9,7 +9,8 @@ jobs:
     working_directory: github.com/Pradeepkumarbk/zfs1
     steps:
       - checkout
-      
+      - run: pwd
+      - run: ls      
       - run: apt-get update
       - run: apt-get install -y software-properties-common
       - run: add-apt-repository ppa:ubuntu-toolchain-r/test
@@ -28,6 +29,7 @@ jobs:
       - run: unlink /usr/bin/g++ && ln -s /usr/bin/g++-6 /usr/bin/g++
       - run: pushd .
       - run: cd
+      - run: pwd
       - run: ls
       - run: cd /usr/src/gtest
       - run: ls
