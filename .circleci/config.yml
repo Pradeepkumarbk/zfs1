@@ -28,19 +28,14 @@ jobs:
       - run: unlink /usr/bin/gcc && ln -s /usr/bin/gcc-6 /usr/bin/gcc
       - run: unlink /usr/bin/g++ && ln -s /usr/bin/g++-6 /usr/bin/g++
       - run: pushd .
-      - run: cd
-      - run: pwd
-      - run: ls
       - run:
           command: |
             cd /usr/src/gtest
-            pwd
-            ls
             cmake CMakeLists.txt
             make -j4
-            cp *.a /usr/lib
-            popd
-            cd ..
+      - run: cp *.a /usr/lib
+      - run: popd
+      - run: cd ..
       - run: git clone https://github.com/axboe/fio
       - run: cd fio
       - run: git checkout 2e4ef4fbd69eb6d4c07f2f362463e3f3df2e808c
