@@ -32,7 +32,8 @@ jobs:
       - run: pwd
       - run: ls
       - run: cd /usr/src/gtest
-      - run: ls
+      - run: pwd
+      - run: ls /usr/src/gtest
       - run: cmake CMakeLists.txt
       - run: make -j4
       - run: cp *.a /usr/lib
