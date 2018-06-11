@@ -27,6 +27,7 @@ jobs:
       - run: unlink /usr/bin/g++ && ln -s /usr/bin/g++-6 /usr/bin/g++
       - run: pushd .
       - run: cd /usr/src/gtest
+      - run: ls
       - run: cmake CMakeLists.txt
       - run: make -j4
       - run: cp *.a /usr/lib
