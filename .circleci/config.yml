@@ -38,6 +38,7 @@ jobs:
             cd ..
       - run:
           command: |
+            apt-get install git -y
             git clone https://github.com/axboe/fio
             cd fio
             git checkout 2e4ef4fbd69eb6d4c07f2f362463e3f3df2e808c
@@ -46,6 +47,7 @@ jobs:
             cd ..
       - run:
           command: |
+            apt-get install git -y
             git clone https://github.com/openebs/spl
             cd spl
             git checkout spl-0.7.4
