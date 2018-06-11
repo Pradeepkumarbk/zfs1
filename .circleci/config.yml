@@ -8,6 +8,7 @@ jobs:
       ZFS_BUILD_TAGS=1
     steps:
       - checkout
+      - run: apt-get install git
       - run: git clone https://github.com/Pradeepkumarbk/zfs1 
       - run: apt-get update 
       - run: apt-get install -y software-properties-common
