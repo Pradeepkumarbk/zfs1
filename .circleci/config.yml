@@ -11,7 +11,11 @@ jobs:
       - run: apt-get update 
       - run: apt-get install -y software-properties-common
       - run: add-apt-repository ppa:ubuntu-toolchain-r/test
-      - run: apt-get install --yes gcc-6 g++-6
+      - run: sudo apt-get update
+      - run: sudo apt-get install gcc-snapshot -y
+      - run: sudo apt-get update
+      - run: sudo apt-get install gcc-6 g++-6 -y
+      - run: sudo apt-get update
       - run: apt-get install -y build-essential autoconf libtool gawk alien fakeroot linux-headers-$(uname -r) libaio-dev
       - run: apt-get install -y zlib1g-dev uuid-dev libattr1-dev libblkid-dev libselinux-dev libudev-dev libssl-dev
       - run: apt-get install -y lcov libjemalloc-dev
