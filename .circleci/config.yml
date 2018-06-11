@@ -31,12 +31,14 @@ jobs:
       - run: cd
       - run: pwd
       - run: ls
-      - run: cd /usr/src/gtest
-      - run: pwd
-      - run: ls /usr/src/gtest
-      - run: cmake CMakeLists.txt
-      - run: make -j4
-      - run: cp *.a /usr/lib
+      - run:
+          command: |
+            cd /usr/src/gtest
+            pwd
+            ls
+            cmake CMakeLists.txt
+            make -j4
+            cp *.a /usr/lib
       - run: popd
       - run: cd ..
       - run: git clone https://github.com/axboe/fio
