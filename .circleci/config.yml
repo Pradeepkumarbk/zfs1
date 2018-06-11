@@ -26,14 +26,14 @@ jobs:
       - run: apt-get install -y parted lsscsi ksh attr acl nfs-kernel-server fio
       # - run: apt-get install -y libgtest-dev cmake
       # - run: apt-get install -y libgtest0 libgtest-dev 
-      - run: apt-get install -y libgtest-dev cmake
+      # - run: apt-get install -y libgtest-dev cmake
       - run: apt-get install -y gdb
       - run: unlink /usr/bin/gcc && ln -s /usr/bin/gcc-6 /usr/bin/gcc
       - run: unlink /usr/bin/g++ && ln -s /usr/bin/g++-6 /usr/bin/g++
-      - run: pushd .
+      - run: apt-get install libgtest-dev
+      - run: apt-get install cmake
+      # - run: pushd .
       - run: cd /usr/src/gtest
-      - run: ls
-      - run: cd Pradeepkumarbk
       - run: ls
       - run: cmake CMakeLists.txt
       - run: make -j4
