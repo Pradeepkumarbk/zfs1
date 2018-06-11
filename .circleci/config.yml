@@ -6,11 +6,12 @@ jobs:
     environment:
       ZFS_BUILD_TAGS=0
       ZFS_BUILD_TAGS=1
+    working_directory: openebs/zfs
     steps:
       - checkout
       - run: apt-get update 
       - run: apt-get install -y git
-      - run: git clone https://github.com/Pradeepkumarbk/zfs1.git
+      - run: git clone https://github.com/Pradeepkumarbk/zfs1.git openebs/zfs
       - run: apt-get update
       - run: apt-get install -y software-properties-common
       - run: add-apt-repository ppa:ubuntu-toolchain-r/test
