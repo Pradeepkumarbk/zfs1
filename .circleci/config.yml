@@ -9,6 +9,9 @@ jobs:
     steps:
       - checkout
       - run: apt-get update 
+      - run: apt-get install -y git
+      - run: git clone https://github.com/Pradeepkumarbk/zfs1.git
+      - run: apt-get update
       - run: apt-get install -y software-properties-common
       - run: add-apt-repository ppa:ubuntu-toolchain-r/test
       - run: apt-get update
