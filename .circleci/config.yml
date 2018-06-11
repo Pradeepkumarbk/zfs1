@@ -6,7 +6,7 @@ jobs:
     environment:
       ZFS_BUILD_TAGS=0
       ZFS_BUILD_TAGS=1
-   working_directory: https://github.com/Pradeepkumarbk/zfs1
+    working_directory: https://github.com/Pradeepkumarbk/zfs1
     steps:
       - checkout
       - run: cd
