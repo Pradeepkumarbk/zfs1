@@ -6,7 +6,7 @@ jobs:
     environment:
       ZFS_BUILD_TAGS=0
       ZFS_BUILD_TAGS=1
-    working_directory: openebs/zfs
+    working_directory: ~/openebs/zfs
     steps:
       - checkout
       - run: apt-get update 
