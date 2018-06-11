@@ -6,12 +6,12 @@ jobs:
     environment:
       ZFS_BUILD_TAGS=0
       ZFS_BUILD_TAGS=1
-    working_directory: ~/openebs/zfs
+    working_directory: ~/Pradeepkumarbk/zfs
     steps:
       - checkout
       - run: apt-get update 
       - run: apt-get install -y git
-      - run: git clone https://github.com/Pradeepkumarbk/zfs1.git openebs/zfs
+      - run: git clone https://github.com/Pradeepkumarbk/zfs1.git Pradeepkumarbk/zfs
       - run: apt-get update
       - run: apt-get install -y software-properties-common
       - run: add-apt-repository ppa:ubuntu-toolchain-r/test
@@ -31,7 +31,9 @@ jobs:
       - run: unlink /usr/bin/gcc && ln -s /usr/bin/gcc-6 /usr/bin/gcc
       - run: unlink /usr/bin/g++ && ln -s /usr/bin/g++-6 /usr/bin/g++
       - run: pushd .
-      - run: cd /usr/src/gtest/openebs
+      - run: cd /usr/src/gtest
+      - run: ls
+      - run: cd Pradeepkumarbk
       - run: ls
       - run: cmake CMakeLists.txt
       - run: make -j4
