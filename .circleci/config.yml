@@ -2,14 +2,13 @@ version: 2
 jobs:
   build:
     docker:
-      - image: debian:stretch
+      - image: ubuntu:14.04
     environment:
       ZFS_BUILD_TAGS=0
       ZFS_BUILD_TAGS=1
     steps:
       - checkout
       - run: apt-get update 
-      - run: apt-get -y upgrade
       - run: apt-get install -y software-properties-common
       - run: add-apt-repository ppa:ubuntu-toolchain-r/test
       - run: apt-get update
