@@ -4,7 +4,8 @@ jobs:
     docker:
       - image: ubuntu:14.04
     environment:
-      - ZFS_BUILD_TAGS=0
+      - ZFS_BUILD_TAGS=1
+      - ZFS_BUILD_TAGSS=0
     working_directory: github.com/Pradeepkumarbk/zfs1
     steps:
       - checkout
@@ -62,25 +63,36 @@ jobs:
       - run: sh autogen.sh
       - run:
           command: |
-            if [ $ZFS_BUILD_TAGS = 0 ]; then
+            if [ $ZFS_BUILD_TAGS = 1 ]; then
               ./configure --with-config=user --enable-code-coverage=yes --enable-debug --enable-uzfs=yes --with-jemalloc --with-fio=$PWD/../fio || true;
               make -j4;
-            else
-              ./configure --enable-code-coverage=yes --enable-debug || true;
-              make --no-print-directory -s pkg-utils pkg-kmod || true;
-              dpkg -i *.deb || true;
             fi
       # run ztest and test supported zio backends
       # XXX enable the ztest when ticket #152 is fixed
       - run:
           command: |
-            if [ $ZFS_BUILD_TAGS = 0 ]; then
+            if [ $ZFS_BUILD_TAGS = 1 ]; then
               export FIO_SRCDIR=$PWD/../fio;
               timeout 60 bash ./tests/cbtest/script/test_uzfs.sh -T all || true;
-            else
-             /sbin/modprobe zfs;
-             timeout 10 /sbin/ztest || true;
             fi
       - store_artifacts:
           path: /var/tmp/test_results/current/log
           destination: /var/tmp/test_results/current/log
+      - run:
+          command: |
+            if [ $ZFS_BUILD_TAGSSS = 0 ]; then
+              ./configure --enable-code-coverage=yes --enable-debug || true;
+              make --no-print-directory -s pkg-utils pkg-kmod || true;
+              dpkg -i *.deb || true;
+            fi
+      - run:
+          command: |
+            if [ $ZFS_BUILD_TAGSS = 0 ]; then
+              /sbin/modprobe zfs;
+              timeout 10 /sbin/ztest || true;
+            fi
+      - store_artifacts:
+          path: /var/tmp/test_results/current/log
+          destination: /var/tmp/test_results/current/log
+
+
