@@ -9,17 +9,78 @@ jobs:
     working_directory: github.com/Pradeepkumarbk/zfs1
     steps:
       - checkout
+      - run: printf "%f,ZFS_BUILD_TAGS"
       - run: pwd
       - run: ls      
-jobs:
-  build:
-    docker:
-      - image: ubuntu:14.04
-    environment:
-      - ZFS_BUILD_TAGS=0
-      - ZFS_BUILD_TAGS=1
-    working_directory: github.com/Pradeepkumarbk/zfs1
-    steps:
-      - checkout
-      - run: pwd
-      - run: ls
+      - run: apt-get update
+      - run: apt-get install -y software-properties-common
+      - run: add-apt-repository ppa:ubuntu-toolchain-r/test
+      - run: apt-get update
+      - run: apt-get install gcc-snapshot -y
+      - run: apt-get update
+      - run: apt-get install gcc-6 g++-6 -y
+      - run: apt-get update
+      - run: apt-get install -y build-essential autoconf libtool gawk alien fakeroot linux-headers-$(uname -r) libaio-dev
+      - run: apt-get install -y zlib1g-dev uuid-dev libattr1-dev libblkid-dev libselinux-dev libudev-dev libssl-dev
+      - run: apt-get install -y lcov libjemalloc-dev
+      - run: apt-get install -y parted lsscsi ksh attr acl nfs-kernel-server fio
+      - run: apt-get install -y libgtest-dev cmake
+      - run: apt-get install -y gdb
+      - run: unlink /usr/bin/gcc && ln -s /usr/bin/gcc-6 /usr/bin/gcc
+      - run: unlink /usr/bin/g++ && ln -s /usr/bin/g++-6 /usr/bin/g++
+      - run:
+          command: |
+            pushd .
+            cd /usr/src/gtest
+            cmake CMakeLists.txt
+            make -j4
+            cp *.a /usr/lib
+            popd
+            cd ..
+      - run:
+          command: |
+            apt-get install git -y
+            git clone https://github.com/axboe/fio
+            cd fio
+            git checkout 2e4ef4fbd69eb6d4c07f2f362463e3f3df2e808c
+            ./configure
+            make -j4
+            cd ..
+      - run:
+          command: |
+            apt-get install git -y
+            git clone https://github.com/openebs/spl
+            cd spl
+            git checkout spl-0.7.4
+            sh autogen.sh
+            ./configure
+            if [ $ZFS_BUILD_TAGS = 0 ]; then
+              make -j4;
+            else
+              make --no-print-directory -s pkg-utils pkg-kmod;
+              dpkg -i *.deb;
+            fi
+      - run: sh autogen.sh
+      - run:
+          command: |
+            if [ $ZFS_BUILD_TAGS = 0 ]; then
+              ./configure --with-config=user --enable-code-coverage=yes --enable-debug --enable-uzfs=yes --with-jemalloc --with-fio=$PWD/../fio || true;
+              make -j4;
+            else
+              ./configure --enable-code-coverage=yes --enable-debug || true;
+              make --no-print-directory -s pkg-utils pkg-kmod || true;
+              dpkg -i *.deb || true;
+            fi
+      - run: make cstyle;
+      # run ztest and test supported zio backends
+      # XXX enable the ztest when ticket #152 is fixed
+      - run: if [ $ZFS_BUILD_TAGS = 0 ]; then
+             export FIO_SRCDIR=$PWD/../fio;
+             timeout 60 bash ./tests/cbtest/script/test_uzfs.sh -T all || true;
+           else
+             /sbin/modprobe zfs;
+             timeout 10 /sbin/ztest || true;
+           fi
+      - store_artifacts:
+          path: /var/tmp/test_results/current/log
+          destination: /var/tmp/test_results/current/log
