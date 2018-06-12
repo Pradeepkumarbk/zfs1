@@ -9,7 +9,10 @@ jobs:
     steps:
       - checkout
       - run: printf "%f,$ZFS_BUILD_TAGS"
-      - run: ZFS_BUILD_TAGS=1
+jobs:
+  build:
+    environment:
+      - ZFS_BUILD_TAGS=1
       - run: printf "%f,$ZFS_BUILD_TAGS"
       - run: pwd
       - run: ls      
