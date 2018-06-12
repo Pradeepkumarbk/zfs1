@@ -70,7 +70,7 @@ jobs:
               make --no-print-directory -s pkg-utils pkg-kmod || true;
               dpkg -i *.deb || true;
             fi
-            make cstyle;
+            make cstyle
       # run ztest and test supported zio backends
       # XXX enable the ztest when ticket #152 is fixed
       - run: if [ $ZFS_BUILD_TAGS = 0 ]; then
