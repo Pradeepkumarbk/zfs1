@@ -3,8 +3,6 @@ jobs:
   build:
     docker:
       - image: ubuntu:14.04
-    environment:
-      ZFS_BUILD_TAGS=0
     working_directory: github.com/Pradeepkumarbk/zfs1
     steps:
       - checkout
@@ -58,7 +56,6 @@ jobs:
               make --no-print-directory -s pkg-utils pkg-kmod;
               dpkg -i *.deb;
             fi
-            cd ../zfs1
       - run: sh autogen.sh
       - run:
           command: |
