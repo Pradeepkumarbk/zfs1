@@ -72,13 +72,15 @@ jobs:
             fi
       # run ztest and test supported zio backends
       # XXX enable the ztest when ticket #152 is fixed
-      - run: if [ $ZFS_BUILD_TAGS = 0 ]; then
-             export FIO_SRCDIR=$PWD/../fio;
-             timeout 60 bash ./tests/cbtest/script/test_uzfs.sh -T all || true;
-           else
+      - run:
+          command: |
+            if [ $ZFS_BUILD_TAGS = 0 ]; then
+              export FIO_SRCDIR=$PWD/../fio;
+              timeout 60 bash ./tests/cbtest/script/test_uzfs.sh -T all || true;
+            else
              /sbin/modprobe zfs;
              timeout 10 /sbin/ztest || true;
-           fi
+            fi
       - store_artifacts:
           path: /var/tmp/test_results/current/log
           destination: /var/tmp/test_results/current/log
