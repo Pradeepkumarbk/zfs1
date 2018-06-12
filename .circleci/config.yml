@@ -59,8 +59,6 @@ jobs:
               make --no-print-directory -s pkg-utils pkg-kmod;
               dpkg -i *.deb;
             fi
-      - run: cd ../zfs
-      - run: ls
       - run: sh autogen.sh
       - run: if [ $ZFS_BUILD_TAGS = 0 ]; then
               ./configure --with-config=user --enable-code-coverage=yes --enable-debug --enable-uzfs=yes --with-jemalloc --with-fio=$PWD/../fio || true;
