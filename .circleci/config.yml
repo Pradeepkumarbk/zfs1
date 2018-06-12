@@ -9,7 +9,7 @@ jobs:
     working_directory: github.com/Pradeepkumarbk/zfs1
     steps:
       - checkout
-      - run: printf "%f,ZFS_BUILD_TAGS"
+      - run: printf "%f,$ZFS_BUILD_TAGS"
       - run: pwd
       - run: ls      
       - run: apt-get update
