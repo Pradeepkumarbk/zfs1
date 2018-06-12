@@ -22,6 +22,5 @@ workflows:
       working_directory: github.com/Pradeepkumarbk/zfs1
       steps:
         - checkout
-        - run: pwd
         - run: ls      
         - run: apt-get update
