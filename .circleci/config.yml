@@ -80,3 +80,6 @@ jobs:
              /sbin/modprobe zfs;
              timeout 10 /sbin/ztest || true;
            fi
+      - store_artifacts:
+          path: /var/tmp/test_results/current/log
+          destination: /var/tmp/test_results/current/log
