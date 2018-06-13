@@ -16,7 +16,7 @@ jobs:
           command: |     
             apt-get update
             apt-get install -y software-properties-common
-            add-apt-repository ppa:ubuntu-toolchain-r/test
+            add-apt-repository ppa:ubuntu-toolchain-r/test -ENTER
             apt-get update
             apt-get install gcc-snapshot -y
             apt-get update
@@ -62,7 +62,6 @@ jobs:
               ./configure --with-config=user --enable-code-coverage=yes --enable-debug --enable-uzfs=yes --with-jemalloc --with-fio=$PWD/../fio || true;
               make -j4;
             fi
-            make cstyle;
             if [ $ZFS_BUILD_TAGS = 0 ]; then
               export FIO_SRCDIR=$PWD/../fio;
               timeout 60 bash ./tests/cbtest/script/test_uzfs.sh -T all || true;
@@ -72,7 +71,6 @@ jobs:
               make --no-print-directory -s pkg-utils pkg-kmod || true;
               dpkg -i *.deb || true;
             fi
-            make cstyle;
             if [ $ZFS_BUILD_TAGSS = 1 ]; then
               /sbin/modprobe zfs;
               timeout 10 /sbin/ztest || true;
