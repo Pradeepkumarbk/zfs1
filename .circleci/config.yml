@@ -50,29 +50,29 @@ jobs:
             git checkout spl-0.7.4
             sh autogen.sh
             ./configure
-            if [ $ZFS_BUILD_TAGS = 0 ]; then
+            if [ "$ZFS_BUILD_TAGS" = "0" ]; then
               make -j4;
             fi
-            if [ $ZFS_BUILD_TAGSS = 1 ]; then
+            if [ "$ZFS_BUILD_TAGSS" = "1" ]; then
               make --no-print-directory -s pkg-utils pkg-kmod;
               dpkg -i *.deb;
             fi
             cd ../zfs1
             sh autogen.sh
-            if [ $ZFS_BUILD_TAGS = 0 ]; then
+            if [ "$ZFS_BUILD_TAGS" = "0" ]; then
               ./configure --with-config=user --enable-code-coverage=yes --enable-debug --enable-uzfs=yes --with-jemalloc --with-fio=$PWD/../fio || true;
               make -j4;
             fi
-            if [ $ZFS_BUILD_TAGS = 0 ]; then
+            if [ "$ZFS_BUILD_TAGS" = "0" ]; then
               export FIO_SRCDIR=$PWD/../fio;
               timeout 60 bash ./tests/cbtest/script/test_uzfs.sh -T all || true;
             fi
-            if [ $ZFS_BUILD_TAGSSS = 1 ]; then
+            if [ "$ZFS_BUILD_TAGSSS" = "1" ]; then
               ./configure --enable-code-coverage=yes --enable-debug || true;
               make --no-print-directory -s pkg-utils pkg-kmod || true;
               dpkg -i *.deb || true;
             fi
-            if [ $ZFS_BUILD_TAGSS = 1 ]; then
+            if [ "$ZFS_BUILD_TAGSS" = "1" ]; then
               /sbin/modprobe zfs;
               timeout 10 /sbin/ztest || true;
             fi
