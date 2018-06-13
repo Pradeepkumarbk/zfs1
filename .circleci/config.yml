@@ -22,6 +22,8 @@ jobs:
             sudo add-apt-repository --yes ppa:zfs-native/stable
             sudo apt-get update
             sudo apt-get install -y ubuntu-zfs
+            sudo modprobe zfs
+            sudo zfs list 
             sudo add-apt-repository --yes ppa:ubuntu-toolchain-r/test
             sudo apt-get update
             sudo apt-get install gcc-snapshot -y
