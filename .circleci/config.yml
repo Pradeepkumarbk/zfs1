@@ -17,12 +17,9 @@ jobs:
             apt-get update
             apt-get install bc
             sudo apt-get install -y software-properties-common
-            sudo apt-get install python-software-properties -y
             sudo add-apt-repository --yes ppa:zfs-native/stable
             sudo apt-get update
             sudo apt-get install -y ubuntu-zfs
-            sudo modprobe zfs
-            sudo zfs list 
             sudo add-apt-repository --yes ppa:ubuntu-toolchain-r/test
             sudo apt-get update
             sudo apt-get install gcc-snapshot -y
@@ -58,10 +55,6 @@ jobs:
             ./configure
             if [ "$ZFS_BUILD_TAGS" = "0" ]; then
               make -j4;
-            fi
-            if [ "$ZFS_BUILD_TAGSS" = "1" ]; then
-              make --no-print-directory -s pkg-utils pkg-kmod;
-              sudo dpkg -i *.deb;
             fi
             cd ../zfs1
             sh autogen.sh
