@@ -15,12 +15,13 @@ jobs:
       - run:
           command: |     
             apt-get update
-            apt-get install zfsutils-linux
-            apt-get install zfs-dkms
             # modprobe zfs
             # zfs list
             apt-get install bc
             apt-get install -y software-properties-common
+            add-apt-repository --yes ppa:zfs-native/stable
+            apt-get update
+            apt-get install -y ubuntu-zfs
             add-apt-repository --yes ppa:ubuntu-toolchain-r/test
             apt-get update
             apt-get install gcc-snapshot -y
