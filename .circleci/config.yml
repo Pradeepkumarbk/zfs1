@@ -4,32 +4,32 @@ jobs:
     docker:
       - image: ubuntu:14.04
     environment:
-      - ZFS_BUILD_TAGS=1
-      - ZFS_BUILD_TAGSS=0
+      - ZFS_BUILD_TAGS=0
+      - ZFS_BUILD_TAGSS=1
     working_directory: github.com/Pradeepkumarbk/zfs1
     steps:
       - checkout
       - run: printf "%f,$ZFS_BUILD_TAGS"
       - run: pwd
-      - run: ls      
-      - run: apt-get update
-      - run: apt-get install -y software-properties-common
-      - run: add-apt-repository ppa:ubuntu-toolchain-r/test
-      - run: apt-get update
-      - run: apt-get install gcc-snapshot -y
-      - run: apt-get update
-      - run: apt-get install gcc-6 g++-6 -y
-      - run: apt-get update
-      - run: apt-get install -y build-essential autoconf libtool gawk alien fakeroot linux-headers-$(uname -r) libaio-dev
-      - run: apt-get install -y zlib1g-dev uuid-dev libattr1-dev libblkid-dev libselinux-dev libudev-dev libssl-dev
-      - run: apt-get install -y lcov libjemalloc-dev
-      - run: apt-get install -y parted lsscsi ksh attr acl nfs-kernel-server fio
-      - run: apt-get install -y libgtest-dev cmake
-      - run: apt-get install -y gdb
-      - run: unlink /usr/bin/gcc && ln -s /usr/bin/gcc-6 /usr/bin/gcc
-      - run: unlink /usr/bin/g++ && ln -s /usr/bin/g++-6 /usr/bin/g++
+      - run: ls 
       - run:
-          command: |
+          command: |     
+            apt-get update
+            apt-get install -y software-properties-common
+            add-apt-repository ppa:ubuntu-toolchain-r/test
+            apt-get update
+            apt-get install gcc-snapshot -y
+            apt-get update
+            apt-get install gcc-6 g++-6 -y
+            apt-get update
+            apt-get install -y build-essential autoconf libtool gawk alien fakeroot linux-headers-$(uname -r) libaio-dev
+            apt-get install -y zlib1g-dev uuid-dev libattr1-dev libblkid-dev libselinux-dev libudev-dev libssl-dev
+            apt-get install -y lcov libjemalloc-dev
+            apt-get install -y parted lsscsi ksh attr acl nfs-kernel-server fio
+            apt-get install -y libgtest-dev cmake
+            apt-get install -y gdb
+            unlink /usr/bin/gcc && ln -s /usr/bin/gcc-6 /usr/bin/gcc
+            unlink /usr/bin/g++ && ln -s /usr/bin/g++-6 /usr/bin/g++
             pushd .
             cd /usr/src/gtest
             cmake CMakeLists.txt
@@ -37,8 +37,6 @@ jobs:
             cp *.a /usr/lib
             popd
             cd ..
-      - run:
-          command: |
             apt-get install git -y
             git clone https://github.com/axboe/fio
             cd fio
@@ -46,9 +44,6 @@ jobs:
             ./configure
             make -j4
             cd ..
-      - run:
-          command: |
-            apt-get install git -y
             git clone https://github.com/openebs/spl
             cd spl
             git checkout spl-0.7.4
@@ -56,43 +51,29 @@ jobs:
             ./configure
             if [ $ZFS_BUILD_TAGS = 0 ]; then
               make -j4;
-            else
+            fi
+            if [ $ZFS_BUILD_TAGSS = 1 ]; then
               make --no-print-directory -s pkg-utils pkg-kmod;
               dpkg -i *.deb;
             fi
-      - run: sh autogen.sh
-      - run:
-          command: |
-            if [ $ZFS_BUILD_TAGS = 1 ]; then
+            cd ../zfs
+            sh autogen.sh
+            if [ $ZFS_BUILD_TAGS = 0 ]; then
               ./configure --with-config=user --enable-code-coverage=yes --enable-debug --enable-uzfs=yes --with-jemalloc --with-fio=$PWD/../fio || true;
               make -j4;
             fi
-      # run ztest and test supported zio backends
-      # XXX enable the ztest when ticket #152 is fixed
-      - run:
-          command: |
-            if [ $ZFS_BUILD_TAGS = 1 ]; then
+            if [ $ZFS_BUILD_TAGS = 0 ]; then
               export FIO_SRCDIR=$PWD/../fio;
               timeout 60 bash ./tests/cbtest/script/test_uzfs.sh -T all || true;
             fi
-      - store_artifacts:
-          path: /var/tmp/test_results/current/log
-          destination: /var/tmp/test_results/current/log
-      - run:
-          command: |
-            if [ $ZFS_BUILD_TAGSSS = 0 ]; then
+            if [ $ZFS_BUILD_TAGSSS = 1 ]; then
               ./configure --enable-code-coverage=yes --enable-debug || true;
               make --no-print-directory -s pkg-utils pkg-kmod || true;
               dpkg -i *.deb || true;
             fi
-      - run:
-          command: |
-            if [ $ZFS_BUILD_TAGSS = 0 ]; then
+            if [ $ZFS_BUILD_TAGSS = 1 ]; then
               /sbin/modprobe zfs;
               timeout 10 /sbin/ztest || true;
             fi
-      - store_artifacts:
-          path: /var/tmp/test_results/current/log
-          destination: /var/tmp/test_results/current/log
 
 
