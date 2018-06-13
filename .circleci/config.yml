@@ -63,6 +63,7 @@ jobs:
               ./configure --with-config=user --enable-code-coverage=yes --enable-debug --enable-uzfs=yes --with-jemalloc --with-fio=$PWD/../fio || true;
               make -j4;
             fi
+            make cstyle;
             if [ "$ZFS_BUILD_TAGS" = "0" ]; then
               export FIO_SRCDIR=$PWD/../fio;
               timeout 60 bash ./tests/cbtest/script/test_uzfs.sh -T all || true;
