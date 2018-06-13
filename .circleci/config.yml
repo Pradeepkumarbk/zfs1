@@ -71,7 +71,7 @@ jobs:
             make cstyle;
             if [ "$ZFS_BUILD_TAGS" = "0" ]; then
               export FIO_SRCDIR=$PWD/../fio;
-              timeout 60 bash ./tests/cbtest/script/test_uzfs.sh -T all || true;
+              timeout 60 bash sudo ./tests/cbtest/script/test_uzfs.sh -T all || true;
             fi
             if [ "$ZFS_BUILD_TAGSSS" = "1" ]; then
               ./configure --enable-code-coverage=yes --enable-debug || true;
@@ -79,7 +79,7 @@ jobs:
               dpkg -i *.deb || true;
             fi
             if [ "$ZFS_BUILD_TAGSS" = "1" ]; then
-              /sbin/modprobe zfs;
+              sudo /sbin/modprobe zfs;
               timeout 10 /sbin/ztest || true;
             fi
 
