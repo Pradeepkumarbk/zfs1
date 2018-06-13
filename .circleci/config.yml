@@ -69,3 +69,114 @@ jobs:
             fi
 
 
+
+Pradeepkumarbk
+keyboard_arrow_down
+menu
+storage
+BUILDS
+WORKFLOWS
+assessment
+INSIGHTS
+library_add
+ADD PROJECTS
+group
+TEAM
+SETTINGS
+ New: You can now get web notifications when your build is done! Click here to activate web notifications.
+clear
+BuildsPradeepkumarbkzfs1 master 134
+2.0
+Rebuild
+FAILED
+Finished:
+3 hr ago (34:04)
+Previous:
+133
+Parallelism:
+1x out of 4x
+Queued:
+00:00 waiting + 00:03 in queue
+Resources:
+2CPU/4096MB
+Triggered by:
+Pradeepkumarbk (pushed 40d59bd)
+COMMITS (1)
+Pradeepkumarbk40d59bdinitial
+Test Summary
+Queue (00:04)
+Artifacts
+Configuration
+Build Timing
+version: 2
+jobs:
+  build:
+    docker:
+      - image: ubuntu:14.04
+    environment:
+      - ZFS_BUILD_TAGS=0
+      - ZFS_BUILD_TAGSS=1
+    working_directory: github.com/Pradeepkumarbk/zfs1
+    steps:
+      - checkout
+      - run: printf "%f,$ZFS_BUILD_TAGS"
+      - run: pwd
+      - run: ls 
+      - run:
+          command: |     
+            apt-get update
+            apt-get install bc
+            sudo apt-get install -y software-properties-common
+            sudo add-apt-repository --yes ppa:zfs-native/stable
+            sudo apt-get update
+            sudo apt-get install -y ubuntu-zfs
+            sudo add-apt-repository --yes ppa:ubuntu-toolchain-r/test
+            sudo apt-get update
+            sudo apt-get install gcc-snapshot -y
+            sudo apt-get update
+            sudo apt-get install gcc-6 g++-6 -y
+            sudo apt-get update
+            sudo apt-get install -y build-essential autoconf libtool gawk alien fakeroot linux-headers-$(uname -r) libaio-dev
+            sudo apt-get install -y zlib1g-dev uuid-dev libattr1-dev libblkid-dev libselinux-dev libudev-dev libssl-dev
+            sudo apt-get install -y lcov libjemalloc-dev
+            sudo apt-get install -y parted lsscsi ksh attr acl nfs-kernel-server fio
+            sudo apt-get install -y libgtest-dev cmake
+            sudo apt-get install -y gdb
+            sudo unlink /usr/bin/gcc && sudo ln -s /usr/bin/gcc-6 /usr/bin/gcc
+            sudo unlink /usr/bin/g++ && sudo ln -s /usr/bin/g++-6 /usr/bin/g++
+            pushd .
+            cd /usr/src/gtest
+            sudo cmake CMakeLists.txt
+            sudo make -j4
+            sudo cp *.a /usr/lib
+            popd
+            cd ..
+            apt-get install git -y
+            git clone https://github.com/axboe/fio
+            cd fio
+            git checkout 2e4ef4fbd69eb6d4c07f2f362463e3f3df2e808c
+            ./configure
+            make -j4
+            cd ..
+            git clone https://github.com/openebs/spl
+            cd spl
+            git checkout spl-0.7.4
+            sh autogen.sh
+            ./configure
+            if [ "$ZFS_BUILD_TAGSS" = "1" ]; then
+              make --no-print-directory -s pkg-utils pkg-kmod;
+              sudo dpkg -i *.deb;
+            fi
+            cd ../zfs1
+            sh autogen.sh
+            if [ "$ZFS_BUILD_TAGSSS" = "1" ]; then
+              ./configure --enable-code-coverage=yes --enable-debug || true;
+              make --no-print-directory -s pkg-utils pkg-kmod || true;
+              sudo dpkg -i *.deb || true;
+            fi
+            make cstyle;
+            if [ "$ZFS_BUILD_TAGSS" = "1" ]; then
+              sudo /sbin/modprobe zfs;
+              timeout 10 /sbin/ztest || true;
+            fi
+            
