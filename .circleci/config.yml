@@ -18,30 +18,29 @@ jobs:
             # modprobe zfs
             # zfs list
             apt-get install bc
-            sudo su - &&
             sudo apt-get install -y software-properties-common
-            add-apt-repository --yes ppa:zfs-native/stable
-            apt-get update
-            apt-get install -y ubuntu-zfs
-            add-apt-repository --yes ppa:ubuntu-toolchain-r/test
-            apt-get update
-            apt-get install gcc-snapshot -y
-            apt-get update
-            apt-get install gcc-6 g++-6 -y
-            apt-get update
-            apt-get install -y build-essential autoconf libtool gawk alien fakeroot linux-headers-$(uname -r) libaio-dev
-            apt-get install -y zlib1g-dev uuid-dev libattr1-dev libblkid-dev libselinux-dev libudev-dev libssl-dev
-            apt-get install -y lcov libjemalloc-dev
-            apt-get install -y parted lsscsi ksh attr acl nfs-kernel-server fio
-            apt-get install -y libgtest-dev cmake
-            apt-get install -y gdb
-            unlink /usr/bin/gcc && ln -s /usr/bin/gcc-6 /usr/bin/gcc
-            unlink /usr/bin/g++ && ln -s /usr/bin/g++-6 /usr/bin/g++
+            sudo add-apt-repository --yes ppa:zfs-native/stable
+            sudo apt-get update
+            sudo apt-get install -y ubuntu-zfs
+            sudo add-apt-repository --yes ppa:ubuntu-toolchain-r/test
+            sudo apt-get update
+            sudo apt-get install gcc-snapshot -y
+            sudo apt-get update
+            sudo apt-get install gcc-6 g++-6 -y
+            sudo apt-get update
+            sudo apt-get install -y build-essential autoconf libtool gawk alien fakeroot linux-headers-$(uname -r) libaio-dev
+            sudo apt-get install -y zlib1g-dev uuid-dev libattr1-dev libblkid-dev libselinux-dev libudev-dev libssl-dev
+            sudo apt-get install -y lcov libjemalloc-dev
+            sudo apt-get install -y parted lsscsi ksh attr acl nfs-kernel-server fio
+            sudo apt-get install -y libgtest-dev cmake
+            sudo apt-get install -y gdb
+            sudo unlink /usr/bin/gcc && sudo ln -s /usr/bin/gcc-6 /usr/bin/gcc
+            sudo unlink /usr/bin/g++ && sudo ln -s /usr/bin/g++-6 /usr/bin/g++
             pushd .
             cd /usr/src/gtest
-            cmake CMakeLists.txt
-            make -j4
-            cp *.a /usr/lib
+            sudo cmake CMakeLists.txt
+            sudo make -j4
+            sudo cp *.a /usr/lib
             popd
             cd ..
             apt-get install git -y
@@ -61,7 +60,7 @@ jobs:
             fi
             if [ "$ZFS_BUILD_TAGSS" = "1" ]; then
               make --no-print-directory -s pkg-utils pkg-kmod;
-              dpkg -i *.deb;
+              sudo dpkg -i *.deb;
             fi
             cd ../zfs1
             sh autogen.sh
@@ -72,15 +71,15 @@ jobs:
             make cstyle;
             if [ "$ZFS_BUILD_TAGS" = "0" ]; then
               export FIO_SRCDIR=$PWD/../fio;
-              timeout 60 bash ./tests/cbtest/script/test_uzfs.sh -T all || true;
+              timeout 60 sudo bash ./tests/cbtest/script/test_uzfs.sh -T all || true;
             fi
             if [ "$ZFS_BUILD_TAGSSS" = "1" ]; then
               ./configure --enable-code-coverage=yes --enable-debug || true;
               make --no-print-directory -s pkg-utils pkg-kmod || true;
-              dpkg -i *.deb || true;
+              sudo dpkg -i *.deb || true;
             fi
             if [ "$ZFS_BUILD_TAGSS" = "1" ]; then
-              /sbin/modprobe zfs;
+              sudo /sbin/modprobe zfs;
               timeout 10 /sbin/ztest || true;
             fi
 
