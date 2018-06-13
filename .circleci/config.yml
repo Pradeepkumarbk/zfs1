@@ -15,9 +15,10 @@ jobs:
       - run:
           command: |     
             apt-get update
-            apt install zfs-dkms
-            modprobe zfs
-            zfs list
+            apt-get install zfs-dkms
+            apt-get install zfs-dkms
+            # modprobe zfs
+            # zfs list
             apt-get install bc
             apt-get install -y software-properties-common
             add-apt-repository --yes ppa:ubuntu-toolchain-r/test
