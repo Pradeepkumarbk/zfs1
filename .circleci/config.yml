@@ -18,7 +18,7 @@ jobs:
             # modprobe zfs
             # zfs list
             apt-get install bc
-            sudo su -
+            sudo su - &&
             apt-get install -y software-properties-common
             add-apt-repository --yes ppa:zfs-native/stable
             apt-get update
