@@ -17,7 +17,7 @@ jobs:
             apt-get update
             apt-get install bc
             apt-get install -y software-properties-common
-            add-apt-repository ppa:zfs-native/stable
+            apt-add-repository --yes ppa:zfs-native/stable
             apt-get update
             apt-get install -y ubuntu-zfs
             modprobe zfs
