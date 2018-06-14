@@ -56,14 +56,15 @@ jobs:
             fi
             cd ../zfs1
             sh autogen.sh
-            # dpkg -i --force linux-image-3.13.0-83-generic_3.13.0-83.127_amd64.deb
-            apt install -y zfsutils-linux
-            dpkg -i --force linux-image-3.13.0-83-generic_3.13.0-83.127_amd64.deb
+            apt-get update
+            apt-get install -y ubuntu-zfs
+            modprobe zfs
             if [ "$ZFS_BUILD_TAGSSS" = "1" ]; then
               ./configure --enable-code-coverage=yes --enable-debug || true;
               make --no-print-directory -s pkg-utils pkg-kmod || true;
               dpkg -i *.deb || true;
             fi
+
             if [ "$ZFS_BUILD_TAGSS" = "1" ]; then
               /sbin/modprobe zfs;
               timeout 10 /sbin/ztest || true;
