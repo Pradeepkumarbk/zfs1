@@ -17,8 +17,6 @@ jobs:
             apt-get update
             apt-get install bc
             apt-get install -y software-properties-common
-            apt-get install -y ubuntu-zfs
-            modprobe zfs
             add-apt-repository --yes ppa:ubuntu-toolchain-r/test
             apt-get update
             apt-get install gcc-snapshot -y
