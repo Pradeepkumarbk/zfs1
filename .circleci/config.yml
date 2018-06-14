@@ -62,6 +62,7 @@ jobs:
               dpkg -i *.deb || true;
             fi
             # chmod -R 744 cmd/mount_zfs/Makefile.am
+            make cstyle;
             if [ "$ZFS_BUILD_TAGSS" = "1" ]; then
               /sbin/modprobe zfs;
               timeout 10 /sbin/ztest || true;
