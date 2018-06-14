@@ -64,7 +64,7 @@ jobs:
             fi
             # chmod -R 744 cmd/mount_zfs/Makefile.am
             if [ "$ZFS_BUILD_TAGSS" = "1" ]; then
-              /sbin/modprobe zfs1;
+              /sbin/modprobe zfs;
               timeout 10 /sbin/ztest || true;
             fi
             
