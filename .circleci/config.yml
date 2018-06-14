@@ -17,9 +17,6 @@ jobs:
             apt-get update
             apt-get install bc
             sudo apt-get install -y software-properties-common
-            sudo add-apt-repository --yes ppa:zfs-native/stable
-            sudo apt-get update
-            sudo apt-get install -y ubuntu-zfs
             sudo add-apt-repository --yes ppa:ubuntu-toolchain-r/test
             sudo apt-get update
             sudo apt-get install gcc-snapshot -y
@@ -65,6 +62,11 @@ jobs:
               sudo dpkg -i *.deb || true;
             fi
             if [ "$ZFS_BUILD_TAGSS" = "1" ]; then
+              sudo add-apt-repository --yes ppa:zfs-native/stable
+              sudo apt-get update
+              sudo apt-get install -y ubuntu-zfs
+              sudo modprobe zfs
+              dmesg | grep ZFS
               sudo /sbin/modprobe zfs;
               timeout 10 /sbin/ztest || true;
             fi
