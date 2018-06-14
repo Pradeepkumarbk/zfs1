@@ -17,6 +17,10 @@ jobs:
             apt-get update
             apt-get install bc
             apt-get install -y software-properties-common
+            add-apt-repository ppa:zfs-native/stable
+            apt-get update
+            apt-get install -y ubuntu-zfs
+            modprobe zfs
             add-apt-repository --yes ppa:ubuntu-toolchain-r/test
             apt-get update
             apt-get install gcc-snapshot -y
@@ -56,10 +60,6 @@ jobs:
             fi
             cd ../zfs1
             sh autogen.sh
-            add-apt-repository ppa:zfs-native/stable
-            apt-get update
-            apt-get install -y ubuntu-zfs
-            modprobe zfs
             if [ "$ZFS_BUILD_TAGSSS" = "1" ]; then
               ./configure --enable-code-coverage=yes --enable-debug || true;
               make --no-print-directory -s pkg-utils pkg-kmod || true;
