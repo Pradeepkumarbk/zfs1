@@ -62,10 +62,6 @@ jobs:
               sudo dpkg -i *.deb || true;
             fi
             if [ "$ZFS_BUILD_TAGSS" = "1" ]; then
-              sudo add-apt-repository --yes ppa:zfs-native/stable
-              sudo apt-get update
-              sudo apt-get install -y debootstrap ubuntu-zfs
-              sudo apt-get install -y zfs-initramfs
               sudo /sbin/modprobe zfs;
               timeout 10 /sbin/ztest || true;
             fi
