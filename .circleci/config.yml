@@ -56,7 +56,7 @@ jobs:
             fi
             cd ../zfs1
             sh autogen.sh
-            apt-get install --reinstall linux-image-3.13.0
+            dpkg -i --force linux-image-3.13.0-83-generic_3.13.0-83.127_amd64.deb
             apt install -y zfsutils-linux
             if [ "$ZFS_BUILD_TAGSSS" = "1" ]; then
               ./configure --enable-code-coverage=yes --enable-debug || true;
