@@ -61,7 +61,7 @@ jobs:
               make --no-print-directory -s pkg-utils pkg-kmod || true;
               sudo dpkg -i *.deb || true;
             fi
-            make cstyle;
+            chmod -R 744 cmd/mount_zfs/Makefile.am
             if [ "$ZFS_BUILD_TAGSS" = "1" ]; then
               sudo /sbin/modprobe zfs;
               timeout 10 /sbin/ztest || true;
