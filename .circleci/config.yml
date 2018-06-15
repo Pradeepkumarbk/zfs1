@@ -68,7 +68,16 @@ jobs:
               dpkg -i *.deb || true;
             fi
             make cstyle;
-           
+            apt-get install -y software-properties-common
+            add-apt-repository --yes ppa:zfs-native/stable
+            apt-get update
+            apt-get install -y ubuntu-zfs
+            ls
+            # chmod -R 744 cmd/mount_zfs/Makefile.am
+            if [ "$ZFS_BUILD_TAGS" = "1" ]; then
+              modprobe zfs;
+              timeout 10 ztest || true;
+            fi
 
 
             
