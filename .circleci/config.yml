@@ -58,6 +58,8 @@ jobs:
             fi
             cd ../zfs1
             sh autogen.sh
+            sudo apt install -y zfsutils-linux
+            depmod
             if [ "$ZFS_BUILD_TAGSS" = "1" ]; then
               ./configure --enable-code-coverage=yes --enable-debug || true;
               make --no-print-directory -s pkg-utils pkg-kmod || true;
