@@ -68,8 +68,8 @@ jobs:
             make cstyle;
             # chmod -R 744 cmd/mount_zfs/Makefile.am
             if [ "$ZFS_BUILD_TAGS" = "1" ]; then
-              sudo /sbin/modprobe zfs;
-              timeout 10 /sbin/ztest || true;
+              sudo bash /sbin/modprobe zfs;
+              timeout 10 bash /sbin/ztest || true;
             fi
 
 
