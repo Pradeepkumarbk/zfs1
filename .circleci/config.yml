@@ -17,6 +17,7 @@ jobs:
             apt-get update
             apt-get install bc
             apt-get install -y software-properties-common
+            export PATH=$PATH:/sbin/
             apt-get update && apt-get install -y sudo && rm -rf /var/lib/apt/lists/*
             sudo add-apt-repository --yes ppa:ubuntu-toolchain-r/test
             sudo apt-get update
