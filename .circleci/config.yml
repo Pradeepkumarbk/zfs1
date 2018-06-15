@@ -64,6 +64,7 @@ jobs:
               sudo dpkg -i *.deb || true;
             fi
             make cstyle;
+            echo $PATH
             # chmod -R 744 cmd/mount_zfs/Makefile.am
             if [ "$ZFS_BUILD_TAGS" = "1" ]; then
               sudo sbin/modprobe zfs;
