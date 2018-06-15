@@ -4,8 +4,8 @@ jobs:
     docker:
       - image: ubuntu:16.04
     environment:
-      - ZFS_BUILD_TAGS=0
-      - ZFS_BUILD_TAGSS=1
+      # - ZFS_BUILD_TAGS=0
+      - ZFS_BUILD_TAGS=1
     working_directory: github.com/Pradeepkumarbk/zfs1
     steps:
       - checkout
@@ -52,7 +52,7 @@ jobs:
             git checkout spl-0.7.4
             sh autogen.sh
             ./configure
-            if [ "$ZFS_BUILD_TAGSS" = "1" ]; then
+            if [ "$ZFS_BUILD_TAGS" = "1" ]; then
               make --no-print-directory -s pkg-utils pkg-kmod;
               sudo dpkg -i *.deb;
             fi
@@ -60,16 +60,16 @@ jobs:
             sh autogen.sh
             sudo apt install -y zfsutils-linux
             depmod
-            if [ "$ZFS_BUILD_TAGSS" = "1" ]; then
+            if [ "$ZFS_BUILD_TAGS" = "1" ]; then
               ./configure --enable-code-coverage=yes --enable-debug || true;
               make --no-print-directory -s pkg-utils pkg-kmod || true;
               sudo dpkg -i *.deb || true;
             fi
             make cstyle;
             # chmod -R 744 cmd/mount_zfs/Makefile.am
-            if [ "$ZFS_BUILD_TAGSS" = "1" ]; then
-              sudo modprobe zfs;
-              timeout 10 ztest || true;
+            if [ "$ZFS_BUILD_TAGS" = "1" ]; then
+              sudo /sbin/modprobe zfs;
+              timeout 10 /sbin/ztest || true;
             fi
 
 
