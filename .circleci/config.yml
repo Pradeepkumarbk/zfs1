@@ -75,7 +75,7 @@ jobs:
             ls
             # chmod -R 744 cmd/mount_zfs/Makefile.am
             if [ "$ZFS_BUILD_TAGS" = "1" ]; then
-              modprobe zfs;
+              sudo modprobe zfs;
               timeout 10 ztest || true;
             fi
 
