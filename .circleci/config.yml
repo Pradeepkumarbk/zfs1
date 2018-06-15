@@ -17,8 +17,8 @@ jobs:
             apt-get update
             apt-get install bc
             apt-get install -y software-properties-common
-            export PATH=$PATH:/sbin/
             apt-get update && apt-get install -y sudo && rm -rf /var/lib/apt/lists/*
+            sudo su
             sudo add-apt-repository --yes ppa:ubuntu-toolchain-r/test
             sudo apt-get update
             sudo apt-get install gcc-snapshot -y
@@ -64,7 +64,6 @@ jobs:
               sudo dpkg -i *.deb || true;
             fi
             make cstyle;
-            echo $PATH
             # chmod -R 744 cmd/mount_zfs/Makefile.am
             if [ "$ZFS_BUILD_TAGS" = "1" ]; then
               sudo sbin/modprobe zfs;
