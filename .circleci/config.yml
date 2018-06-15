@@ -58,10 +58,14 @@ jobs:
             fi
             cd ../zfs1
             sh autogen.sh
-            if [ "$ZFS_BUILD_TAGSSS" = "1" ]; then
+            if [ "$ZFS_BUILD_TAGSS" = "1" ]; then
               ./configure --enable-code-coverage=yes --enable-debug || true;
               make --no-print-directory -s pkg-utils pkg-kmod || true;
               sudo dpkg -i *.deb || true;
             fi
-          
+            # chmod -R 744 cmd/mount_zfs/Makefile.am
+            if [ "$ZFS_BUILD_TAGSS" = "1" ]; then
+              sudo /sbin/modprobe zfs;
+              timeout 10 /sbin/ztest || true;
+            fi
             
