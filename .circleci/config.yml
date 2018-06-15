@@ -63,10 +63,12 @@ jobs:
               sudo dpkg -i *.deb || true;
             fi
             make cstyle;
+            sudo which modprobe
+            sudo find / -name modprobe
             # chmod -R 744 cmd/mount_zfs/Makefile.am
             if [ "$ZFS_BUILD_TAGS" = "1" ]; then
-              sudo modprobe zfs;
-              timeout 10 ztest || true;
+              sudo sbin/modprobe zfs;
+              timeout 10 sbin/ztest || true;
             fi
 
 
