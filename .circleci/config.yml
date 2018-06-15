@@ -17,6 +17,9 @@ jobs:
             apt-get update
             apt-get install bc
             apt-get install -y software-properties-common
+            sudo add-apt-repository --yes ppa:zfs-native/stable
+            sudo apt-get update
+            sudo apt-get install -y ubuntu-zfs
             apt-get update && apt-get install -y sudo && rm -rf /var/lib/apt/lists/*
             # sudo apt-get install -y software-properties-common
             sudo add-apt-repository --yes ppa:ubuntu-toolchain-r/test
@@ -66,8 +69,8 @@ jobs:
             make cstyle;
             # chmod -R 744 cmd/mount_zfs/Makefile.am
             if [ "$ZFS_BUILD_TAGS" = "1" ]; then
-              sudo bash /sbin/modprobe zfs;
-              timeout 10 bash /sbin/ztest || true;
+              sudo modprobe zfs;
+              timeout 10 ztest || true;
             fi
 
 
