@@ -20,6 +20,7 @@ jobs:
             add-apt-repository --yes ppa:zfs-native/stable
             apt-get update
             apt-get install -y ubuntu-zfs
+            ls
             # apt-get update && apt-get install -y sudo && rm -rf /var/lib/apt/lists/*
             # sudo apt-get install -y software-properties-common
             add-apt-repository --yes ppa:ubuntu-toolchain-r/test
@@ -67,6 +68,8 @@ jobs:
               dpkg -i *.deb || true;
             fi
             make cstyle;
+            apt install -y zfsutils-linux
+            ls
             # chmod -R 744 cmd/mount_zfs/Makefile.am
             if [ "$ZFS_BUILD_TAGS" = "1" ]; then
               modprobe zfs;
