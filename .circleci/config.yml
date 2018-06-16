@@ -18,7 +18,8 @@ jobs:
             apt-get update
             apt-get install bc
             apt-get install -y software-properties-common
-            apt-get update && apt-get install -y sudo && rm -rf /var/lib/apt/lists/*  
+            apt-get update && apt-get install -y sudo && rm -rf /var/lib/apt/lists/* 
+            apt-get update 
             sudo apt-get install git -y
             sudo apt install linux-generic dkms git
             git clone https://github.com/snuf/iomemory-vsl.git
