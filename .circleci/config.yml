@@ -14,14 +14,13 @@ jobs:
       - run: ls 
       - run:
           command: |
-            apt-get autoremove      
+            uname -mrs      
             apt-get update
-            apt-get upgrade -f 
             apt-get install bc
             apt-get install -y software-properties-common
             apt-get update && apt-get install -y sudo && rm -rf /var/lib/apt/lists/*
             sudo apt-get -y upgrade
-            sudo apt-get install linux-image-extra-3.13.0-45-generic
+            sudo apt-get install linux-image-4.10.0-27-generic
             sudo add-apt-repository --yes ppa:ubuntu-toolchain-r/test
             sudo apt-get update
             sudo apt-get install gcc-snapshot -y
