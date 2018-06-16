@@ -19,6 +19,7 @@ jobs:
             apt-get install bc
             apt-get install -y software-properties-common
             apt-get update && apt-get install -y sudo && rm -rf /var/lib/apt/lists/*
+            sudo apt-get install Linux 4.4.0-101-generic x86_64
             sudo add-apt-repository --yes ppa:ubuntu-toolchain-r/test
             sudo apt-get update
             sudo apt-get install gcc-snapshot -y
