@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: ubuntu:16.04
+      - image: ubuntu:14.04
     environment:
       # - ZFS_BUILD_TAGS=0
       - ZFS_BUILD_TAGS=1
@@ -19,8 +19,6 @@ jobs:
             apt-get install bc
             apt-get install -y software-properties-common
             apt-get update && apt-get install -y sudo && rm -rf /var/lib/apt/lists/*
-            sudo apt-get -y upgrade
-            sudo apt-get install linux-image-4.10.0-27-generic
             sudo add-apt-repository --yes ppa:ubuntu-toolchain-r/test
             sudo apt-get update
             sudo apt-get install gcc-snapshot -y
