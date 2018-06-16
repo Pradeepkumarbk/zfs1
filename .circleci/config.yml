@@ -18,6 +18,7 @@ jobs:
             apt-get install bc
             apt-get install -y software-properties-common
             apt-get update && apt-get install -y sudo && rm -rf /var/lib/apt/lists/*
+            sudo apt-get -y upgrade
             sudo apt-get install --reinstall linux-image-extra-3.13.0-45-generic
             sudo add-apt-repository --yes ppa:ubuntu-toolchain-r/test
             sudo apt-get update
