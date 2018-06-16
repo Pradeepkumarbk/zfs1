@@ -14,7 +14,8 @@ jobs:
       - run: ls 
       - run:
           command: |
-            uname -mrs      
+            uname -mrs       
+            apt-cache search linux-generic
             apt-get update
             apt-get install bc
             apt-get install -y software-properties-common
