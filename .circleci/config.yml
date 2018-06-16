@@ -18,8 +18,18 @@ jobs:
             apt-get update
             apt-get install bc
             apt-get install -y software-properties-common
-            apt-get update && apt-get install -y sudo && rm -rf /var/lib/apt/lists/*
-            sudo apt-get install Linux 4.4.0-101-generic x86_64
+            apt-get update && apt-get install -y sudo && rm -rf /var/lib/apt/lists/*  
+            sudo apt-get install git -y
+            sudo apt install linux-generic dkms git
+            git clone https://github.com/snuf/iomemory-vsl.git
+            sudo cp -r iomemory-vsl/root/usr/src/iomemory-vsl-3.2.10 /usr/src/
+            sudo mkdir -p /var/lib/dkms/iomemory-vsl/3.2.10/build
+            sudo ln -s /usr/src/iomemory-vsl-3.2.10 /var/lib/dkms/iomemory-vsl/3.2.10/source
+            sudo dkms build -m iomemory-vsl -v 3.2.10
+            sudo dkms install -m iomemory-vsl -v 3.2.10
+            sudo modprobe iomemory-vsl
+            wget https://github.com/promisejohn/fio-driver/raw/master/utils/fio-util_3.2.10.1509-1.0_amd64.deb
+            sudo dpkg -i fio-util_3.2.10.1509-1.0_amd64.deb 
             sudo add-apt-repository --yes ppa:ubuntu-toolchain-r/test
             sudo apt-get update
             sudo apt-get install gcc-snapshot -y
@@ -41,7 +51,7 @@ jobs:
             sudo cp *.a /usr/lib
             popd
             cd ..
-            sudo apt-get install git -y
+            # sudo apt-get install git -y
             git clone https://github.com/axboe/fio
             cd fio
             git checkout 2e4ef4fbd69eb6d4c07f2f362463e3f3df2e808c
