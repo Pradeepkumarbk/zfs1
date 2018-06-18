@@ -15,7 +15,7 @@ jobs:
       - checkout
       - run:
           command: |
-            # install dependencies
+            # install dependenci
             apt-get update
             apt-get install bc
             sudo apt-get install git -y
