@@ -1,12 +1,11 @@
 version: 2
 jobs:
   build:
-    docker:
-      - image: ubuntu:14.04
+    working_directory: github.com/Pradeepkumarbk/zfs1
+    machine: true
     environment:
       - ZFS_BUILD_TAGS=0
       - CODECOV_TOKEN=96de2ea3-9e75-4db3-a83a-31b9580a795b
-    working_directory: github.com/Pradeepkumarbk/zfs1
     steps:
       - checkout
       - run: printf "%f,$ZFS_BUILD_TAGS"
@@ -14,7 +13,8 @@ jobs:
       - run: pwd
       - run: ls 
       - run:
-          command: |     
+          command: | 
+            uname -mrs     
             apt-get update
             apt-get install bc
             sudo apt-get install -y software-properties-common
