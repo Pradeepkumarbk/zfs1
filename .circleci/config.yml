@@ -10,17 +10,11 @@ jobs:
     steps:
       - checkout
       - run:
-      - add_ssh_keys:
-	  fingerprints:
-	  "d0:61:12:b0:2b:82:b1:0f:18:06:4a:f2:48:c1:ae:5b"
-      - run: printf "%f,$ZFS_BUILD_TAGS"
-      - run: printf "%f,$CODECOV_TOKEN"
-      - run: pwd
-      - run: ls 
-      - run:
-          command: |     
+          command: |
+            # install dependencies
             apt-get update
             apt-get install bc
+            sudo apt-get install git -y
             sudo apt-get install -y software-properties-common
             sudo add-apt-repository --yes ppa:ubuntu-toolchain-r/test
             sudo apt-get update
@@ -31,9 +25,15 @@ jobs:
             sudo apt-get install -y build-essential autoconf libtool gawk alien fakeroot linux-headers-$(uname -r) libaio-dev
             sudo apt-get install -y zlib1g-dev uuid-dev libattr1-dev libblkid-dev libselinux-dev libudev-dev libssl-dev
             sudo apt-get install -y lcov libjemalloc-dev
+
+            # packages for tests
             sudo apt-get install -y parted lsscsi ksh attr acl nfs-kernel-server fio
             sudo apt-get install -y libgtest-dev cmake
+
+            # packages for debugging
             sudo apt-get install -y gdb
+
+            # use gcc-6 by default
             sudo unlink /usr/bin/gcc && sudo ln -s /usr/bin/gcc-6 /usr/bin/gcc
             sudo unlink /usr/bin/g++ && sudo ln -s /usr/bin/g++-6 /usr/bin/g++
             pushd .
@@ -43,9 +43,12 @@ jobs:
             sudo cp *.a /usr/lib
             popd
             cd ..
-            apt-get install git -y
+
+            # we need fio repo to build zfs replica fio engine
             git clone https://github.com/axboe/fio
             cd fio
+
+            # TODO replace commit hash by version tag in future
             git checkout 2e4ef4fbd69eb6d4c07f2f362463e3f3df2e808c
             ./configure
             make -j4
@@ -65,6 +68,9 @@ jobs:
               make -j4;
             fi
             make cstyle;
+             
+            # run ztest and test supported zio backends
+            # XXX enable the ztest when ticket #152 is fixed
             if [ "$ZFS_BUILD_TAGS" = "0" ]; then
               export FIO_SRCDIR=$PWD/../fio;
               timeout 60 sudo bash ./tests/cbtest/script/test_uzfs.sh -T all || true;
