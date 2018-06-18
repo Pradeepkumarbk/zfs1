@@ -5,11 +5,12 @@ jobs:
       - image: ubuntu:14.04
     environment:
       - ZFS_BUILD_TAGS=0
-      - ZFS_BUILD_TAGSS=1
+      - CODECOV_TOKEN=96de2ea3-9e75-4db3-a83a-31b9580a795b
     working_directory: github.com/Pradeepkumarbk/zfs1
     steps:
       - checkout
       - run: printf "%f,$ZFS_BUILD_TAGS"
+      - run: printf "%f,$CODECOV_TOKEN"
       - run: pwd
       - run: ls 
       - run:
@@ -64,3 +65,4 @@ jobs:
               export FIO_SRCDIR=$PWD/../fio;
               timeout 60 sudo bash ./tests/cbtest/script/test_uzfs.sh -T all || true;
             fi
+            bash <(curl -s https://codecov.io/bash)
