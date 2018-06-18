@@ -65,7 +65,9 @@ jobs:
               export FIO_SRCDIR=$PWD/../fio;
               timeout 60 sudo bash ./tests/cbtest/script/test_uzfs.sh -T all || true;
             fi
-            bash <(curl -s https://codecov.io/bash
+            bash <(curl -s https://codecov.io/bash)
+  deploy-job:
+    steps:
       - add_ssh_keys:
 	  fingerprints:
 	    - "d0:61:12:b0:2b:82:b1:0f:18:06:4a:f2:48:c1:ae:5b"
