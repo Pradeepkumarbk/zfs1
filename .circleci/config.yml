@@ -1,10 +1,5 @@
 version: 2
 jobs:
-  deploy-job:
-    steps:
-      - add_ssh_keys:
-	  fingerprints:
-	    - "d0:61:12:b0:2b:82:b1:0f:18:06:4a:f2:48:c1:ae:5b"
   build:
     docker:
       - image: ubuntu:14.04
@@ -14,6 +9,9 @@ jobs:
     working_directory: github.com/Pradeepkumarbk/zfs1
     steps:
       - checkout
+      - add_ssh_keys:
+	  fingerprints:
+	    - "d0:61:12:b0:2b:82:b1:0f:18:06:4a:f2:48:c1:ae:5b"
       - run: printf "%f,$ZFS_BUILD_TAGS"
       - run: printf "%f,$CODECOV_TOKEN"
       - run: pwd
