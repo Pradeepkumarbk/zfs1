@@ -4,8 +4,8 @@ jobs:
     docker:
       - image: ubuntu:14.04
     environment:
-      # - ZFS_BUILD_TAGS=0
-      - ZFS_BUILD_TAGS=1
+      - ZFS_BUILD_TAGS=0
+      - ZFS_BUILD_TAGSS=1
     working_directory: github.com/Pradeepkumarbk/zfs1
     steps:
       - checkout
@@ -13,25 +13,10 @@ jobs:
       - run: pwd
       - run: ls 
       - run:
-          command: |
-            uname -mrs       
-            apt-cache search linux-generic
+          command: |     
             apt-get update
             apt-get install bc
-            apt-get install -y software-properties-common
-            apt-get update && apt-get install -y sudo && rm -rf /var/lib/apt/lists/* 
-            apt-get update 
-            sudo apt-get install git -y
-            sudo apt install -y linux-generic dkms git -E
-            git clone https://github.com/snuf/iomemory-vsl.git
-            sudo cp -r iomemory-vsl/root/usr/src/iomemory-vsl-3.2.10 /usr/src/
-            sudo mkdir -p /var/lib/dkms/iomemory-vsl/3.2.10/build
-            sudo ln -s /usr/src/iomemory-vsl-3.2.10 /var/lib/dkms/iomemory-vsl/3.2.10/source
-            sudo dkms build -m iomemory-vsl -v 3.2.10
-            sudo dkms install -m iomemory-vsl -v 3.2.10
-            sudo modprobe iomemory-vsl
-            wget https://github.com/promisejohn/fio-driver/raw/master/utils/fio-util_3.2.10.1509-1.0_amd64.deb
-            sudo dpkg -i fio-util_3.2.10.1509-1.0_amd64.deb 
+            sudo apt-get install -y software-properties-common
             sudo add-apt-repository --yes ppa:ubuntu-toolchain-r/test
             sudo apt-get update
             sudo apt-get install gcc-snapshot -y
@@ -53,7 +38,7 @@ jobs:
             sudo cp *.a /usr/lib
             popd
             cd ..
-            # sudo apt-get install git -y
+            apt-get install git -y
             git clone https://github.com/axboe/fio
             cd fio
             git checkout 2e4ef4fbd69eb6d4c07f2f362463e3f3df2e808c
@@ -65,23 +50,17 @@ jobs:
             git checkout spl-0.7.4
             sh autogen.sh
             ./configure
-            if [ "$ZFS_BUILD_TAGS" = "1" ]; then
-              make --no-print-directory -s pkg-utils pkg-kmod;
-              sudo dpkg -i *.deb;
+            if [ "$ZFS_BUILD_TAGS" = "0" ]; then
+              make -j4;
             fi
             cd ../zfs1
             sh autogen.sh
-            if [ "$ZFS_BUILD_TAGS" = "1" ]; then
-              ./configure --enable-code-coverage=yes --enable-debug || true;
-              make --no-print-directory -s pkg-utils pkg-kmod || true;
-              sudo dpkg -i *.deb || true;
+            if [ "$ZFS_BUILD_TAGS" = "0" ]; then
+              ./configure --with-config=user --enable-code-coverage=yes --enable-debug --enable-uzfs=yes --with-jemalloc --with-fio=$PWD/../fio || true;
+              make -j4;
             fi
             make cstyle;
-            # chmod -R 744 cmd/mount_zfs/Makefile.am
-            if [ "$ZFS_BUILD_TAGS" = "1" ]; then
-              sudo sbin/modprobe zfs;
-              timeout 10 sbin/ztest || true;
+            if [ "$ZFS_BUILD_TAGS" = "0" ]; then
+              export FIO_SRCDIR=$PWD/../fio;
+              timeout 60 sudo bash ./tests/cbtest/script/test_uzfs.sh -T all || true;
             fi
-
-
-            
