@@ -3,7 +3,7 @@ jobs:
   build:
     branches:
       only:
-        - master
+        - staging
   build:
     docker:
       - image: ubuntu:14.04
