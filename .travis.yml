@@ -5,7 +5,7 @@ branches:
     - master
 env:
   global:
-    # Travis limits maximum log size, we have to cut tests out
+    # Travis limits maximum log size, we have to cut tests
     # CODECOV_TOKEN="987cf0f1-ae3b-477e-b645-954e682f99ec"
     - ZFS_TEST_TRAVIS_LOG_MAX_LENGTH=800
   matrix:
