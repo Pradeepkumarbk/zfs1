@@ -67,6 +67,6 @@ jobs:
             make cstyle;
             if [ "$ZFS_BUILD_TAGS" = "0" ]; then
               export FIO_SRCDIR=$PWD/../fio;
-              timeout 60 sudo bash ./tests/cbtest/script/test_uzfs.sh -T all || true;
+              timeout 100 sudo bash ./tests/cbtest/script/test_uzfs.sh -T all || true;
             fi
 
