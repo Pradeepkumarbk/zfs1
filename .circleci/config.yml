@@ -6,8 +6,7 @@ jobs:
         - master
 jobs:
   build:
-    docker:
-      - image: ubuntu:14.04
+    machine: true
     environment:
       - ZFS_BUILD_TAGS=0
     working_directory: github.com/Pradeepkumarbk/zfs1
