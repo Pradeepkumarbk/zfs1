@@ -1,21 +1,19 @@
 version: 2
 jobs:
   build:
-    branches:
-      only:
-        - master
-jobs:
-  build:
-    machine: 
+    machine:
       enabled: true
     environment:
-      - ZFS_BUILD_TAGS=0
-    # working_directory: github.com/Pradeepkumarbk/zfs1
+      # - ZFS_BUILD_TAGS=0
+      - ZFS_BUILD_TAGS=1
+    #working_directory: github.com/Pradeepkumarbk/zfs1
     steps:
       - checkout
+      - run: printf "%f,$ZFS_BUILD_TAGS"
       - run: pwd
+      - run: ls 
       - run:
-          command: |     
+          command: |
             sudo apt-get update
             sudo apt-get install bc
             sudo apt-get install git -y
@@ -48,7 +46,7 @@ jobs:
             sudo cp *.a /usr/lib
             popd
             cd ..
-            #apt-get install git -y
+            # sudo apt-get install git -y
             git clone https://github.com/axboe/fio
             cd fio
             git checkout 2e4ef4fbd69eb6d4c07f2f362463e3f3df2e808c
@@ -60,18 +58,20 @@ jobs:
             git checkout spl-0.7.4
             sh autogen.sh
             ./configure
-            if [ "$ZFS_BUILD_TAGS" = "0" ]; then
-              make -j4;
+            if [ "$ZFS_BUILD_TAGS" = "1" ]; then
+              make --no-print-directory -s pkg-utils pkg-kmod;
+              sudo dpkg -i *.deb;
             fi
             cd ../zfs1
             sh autogen.sh
-            if [ "$ZFS_BUILD_TAGS" = "0" ]; then
-              ./configure --with-config=user --enable-code-coverage=yes --enable-debug --enable-uzfs=yes --with-jemalloc --with-fio=$PWD/../fio || true;
-              make -j4;
+            if [ "$ZFS_BUILD_TAGS" = "1" ]; then
+              ./configure --enable-code-coverage=yes --enable-debug || true;
+              make --no-print-directory -s pkg-utils pkg-kmod || true;
+              sudo dpkg -i *.deb || true;
             fi
             make cstyle;
-            if [ "$ZFS_BUILD_TAGS" = "0" ]; then
-              export FIO_SRCDIR=$PWD/../fio;
-              sudo bash ./tests/cbtest/script/test_uzfs.sh -T all || true;
+            # chmod -R 744 cmd/mount_zfs/Makefile.am
+            if [ "$ZFS_BUILD_TAGS" = "1" ]; then
+              sudo modprobe zfs;
+              ztest || true;
             fi
-
