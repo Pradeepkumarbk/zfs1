@@ -10,14 +10,14 @@ jobs:
       enabled: true
     environment:
       - ZFS_BUILD_TAGS=0
-    #working_directory: github.com/Pradeepkumarbk/zfs1
+    # working_directory: github.com/Pradeepkumarbk/zfs1
     steps:
       - checkout
       - run:
           command: |     
-            apt-get update
-            apt-get install bc
-            apt-get install git -y
+            #apt-get update
+            #apt-get install bc
+            #apt-get install git -y
             sudo apt-get install -y software-properties-common
             sudo add-apt-repository --yes ppa:zfs-native/stable
             sudo apt-get update
