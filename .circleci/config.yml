@@ -13,6 +13,7 @@ jobs:
     # working_directory: github.com/Pradeepkumarbk/zfs1
     steps:
       - checkout
+      - run: pwd
       - run:
           command: |     
             sudo apt-get update
