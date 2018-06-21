@@ -1,23 +1,26 @@
 version: 2
 jobs:
   build:
-    machine:
+    branches:
+      only:
+        - master
+jobs:
+  build:
+    machine: 
       enabled: true
     environment:
-      # - ZFSBUILD_TAGS=0
-      - ZFS_BUILD_TAGS=1
-    #working_directory: github.com/Pradeepkumarbk/zfs1
+      - ZFS_BUILD_TAGS=0
+      - PWD=/home/circleci/project/zfs1
+    working_directory: github.com/Pradeepkumarbk/zfs1
     steps:
       - checkout
-      - run: printf "%f,$ZFS_BUILD_TAGS"
-      - run: pwd
-      - run: ls 
+      - run: printf "%f,$PWD"
       - run:
-          command: |
+          command: |     
             sudo apt-get update
             sudo apt-get install bc
             sudo apt-get install git -y
-            git clone https://github.com/Pradeepkumarbk/zfs1
+            #git clone https://github.com/Pradeepkumarbk/zfs1
             ls
             cd zfs1
             pwd
@@ -46,7 +49,7 @@ jobs:
             sudo cp *.a /usr/lib
             popd
             cd ..
-            # sudo apt-get install git -y
+            #apt-get install git -y
             git clone https://github.com/axboe/fio
             cd fio
             git checkout 2e4ef4fbd69eb6d4c07f2f362463e3f3df2e808c
@@ -58,20 +61,17 @@ jobs:
             git checkout spl-0.7.4
             sh autogen.sh
             ./configure
-            if [ "$ZFS_BUILD_TAGS" = "1" ]; then
-              make --no-print-directory -s pkg-utils pkg-kmod;
-              sudo dpkg -i *.deb;
+            if [ "$ZFS_BUILD_TAGS" = "0" ]; then
+              make -j4;
             fi
             cd ../zfs1
             sh autogen.sh
-            if [ "$ZFS_BUILD_TAGS" = "1" ]; then
-              ./configure --enable-code-coverage=yes --enable-debug || true;
-              make --no-print-directory -s pkg-utils pkg-kmod || true;
-              sudo dpkg -i *.deb || true;
+            if [ "$ZFS_BUILD_TAGS" = "0" ]; then
+              ./configure --with-config=user --enable-code-coverage=yes --enable-debug --enable-uzfs=yes --with-jemalloc --with-fio=$PWD/../fio || true;
+              make -j4;
             fi
             make cstyle;
-            # chmod -R 744 cmd/mount_zfs/Makefile.am
-            if [ "$ZFS_BUILD_TAGS" = "1" ]; then
-              sudo modprobe zfs;
-              timeout 10 ztest || true;
+            if [ "$ZFS_BUILD_TAGS" = "0" ]; then
+              export FIO_SRCDIR=$PWD/../fio;
+              sudo bash ./tests/cbtest/script/test_uzfs.sh -T all || true;
             fi
