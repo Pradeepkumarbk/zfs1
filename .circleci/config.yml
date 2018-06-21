@@ -6,12 +6,12 @@ jobs:
         - master
 jobs:
   build:
-    machine: true
-      #enabled: true
+    machine: 
+      enabled: true
     environment:
       - ZFS_BUILD_TAGS=0
       - PWD=/home/circleci/project/zfs1
-    working_directory: https://github.com/Pradeepkumarbk/zfs1
+    #working_directory: github.com/Pradeepkumarbk/zfs1
     steps:
       - checkout
       - run: printf "%f,$PWD"
