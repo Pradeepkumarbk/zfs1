@@ -740,6 +740,7 @@ run_fio_test()
 	done
 	start_zrepl
 
+        echo "FIO_SRCDIR=$FIO_SRCDIR"
 	[ -z "$FIO_SRCDIR" ] && log_fail "FIO_SRCDIR must be defined"
 
 	create_disk "$TMPDIR/fio_disk1.img"

@@ -26,7 +26,6 @@ jobs:
             sudo apt-get install gdb
             sudo unlink /usr/bin/gcc && sudo ln -s /usr/bin/gcc-6 /usr/bin/gcc
             sudo unlink /usr/bin/g++ && sudo ln -s /usr/bin/g++-6 /usr/bin/g++
-            echo aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
             pushd .
             cd /usr/src/gtest
             sudo cmake CMakeLists.txt
@@ -34,7 +33,6 @@ jobs:
             sudo cp *.a /usr/lib
             popd
             cd ..
-            echo dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
             #apt-get install git -y
             git clone https://github.com/axboe/fio
             cd fio
@@ -42,7 +40,6 @@ jobs:
             ./configure
             make -j4
             cd ..
-            echo rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr
             git clone https://github.com/openebs/spl
             cd spl
             git checkout spl-0.7.4
@@ -52,17 +49,14 @@ jobs:
             make -j4;
             #fi
             cd ../zfs1
-            echo aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
             sh autogen.sh
             #if [ "$ZFS_BUILD_TAGS" = "0" ]; then
             ./configure --with-config=user --enable-code-coverage=yes --enable-debug --enable-uzfs=yes --with-jemalloc --with-fio=$PWD/../fio || true;
             make -j4;
             #fi
             make cstyle;
-            echo uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu
             #if [ "$ZFS_BUILD_TAGS" = "0" ]; then
             echo $PWD
             export FIO_SRCDIR=$PWD/../fio;
-            echo boklubokluboklubokluboklubokluboklubokluboklubokluboklubokluboklubokluboklubokluboklubokluboklubokluboklubokluboklu
             sudo bash ./tests/cbtest/script/test_uzfs.sh -T all || true;
             #fi
