@@ -57,6 +57,6 @@ jobs:
             make cstyle;
             #if [ "$ZFS_BUILD_TAGS" = "0" ]; then
             echo $PWD
-            export FIO_SRCDIR=$PWD/../fio;
+            bash FIO_SRCDIR=$PWD/../fio;
             sudo -E bash ./tests/cbtest/script/test_uzfs.sh -T all || true;
             #fi
