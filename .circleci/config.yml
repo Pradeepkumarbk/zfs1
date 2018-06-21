@@ -58,5 +58,5 @@ jobs:
             #if [ "$ZFS_BUILD_TAGS" = "0" ]; then
             echo $PWD
             export FIO_SRCDIR=$PWD/../fio;
-            sudo bash ./tests/cbtest/script/test_uzfs.sh -T all || true;
+            sudo -E bash ./tests/cbtest/script/test_uzfs.sh -T all || true;
             #fi
