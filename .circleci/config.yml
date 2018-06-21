@@ -5,9 +5,11 @@ jobs:
       only:
         - master
 jobs:
-  build:
+  build_tag0:
     machine: 
       enabled: true
+    environment:
+      - CODECOV_TOKEN=96de2ea3-9e75-4db3-a83a-31b9580a795b
     working_directory: ~/github.com/Pradeepkumarbk/zfs1
     steps:
       - checkout
@@ -51,9 +53,12 @@ jobs:
             make cstyle;
             export FIO_SRCDIR=$PWD/../fio;
             sudo -E bash ./tests/cbtest/script/test_uzfs.sh -T all || true;
-  test:
+            bash <(curl -s https://codecov.io/bash)
+  build_tag1:
     machine: 
       enabled: true
+    environment:
+      - CODECOV_TOKEN=96de2ea3-9e75-4db3-a83a-31b9580a795b
     working_directory: ~/github.com/Pradeepkumarbk/zfs1
     steps:
       - checkout
@@ -98,10 +103,11 @@ jobs:
             sudo dpkg -i *.deb || true;
             make cstyle;
             sudo modprobe zfs;
-            timeout 10 ztest || true;
+            ztest || true;
+            bash <(curl -s https://codecov.io/bash)
 workflows:
   version: 2
-  build_and_test:
+  TAGS:
     jobs:
-      - build
-      - test
+      - build_tag0
+      - build_tag1
