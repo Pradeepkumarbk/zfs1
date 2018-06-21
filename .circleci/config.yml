@@ -11,7 +11,7 @@ jobs:
     environment:
       - ZFS_BUILD_TAGS=0
       - PWD=/home/circleci/project/zfs1
-    #working_directory: github.com/Pradeepkumarbk/zfs1
+    working_directory: ~/github.com/Pradeepkumarbk/zfs1
     steps:
       - checkout
       - run: printf "%f,$PWD"
