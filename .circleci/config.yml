@@ -13,7 +13,8 @@ jobs:
       - checkout
       - run: printf "%f,$PWD"
       - run:
-          command: |     
+          command: | 
+            echo hhhhhh    
             sudo apt-get update
             sudo apt-get install bc
             sudo apt-get install git -y
@@ -69,6 +70,6 @@ jobs:
             #fi
             make cstyle;
             #if [ "$ZFS_BUILD_TAGS" = "0" ]; then
-            #export FIO_SRCDIR=$PWD/../fio;
+            export FIO_SRCDIR=$PWD/../fio;
             sudo bash ./tests/cbtest/script/test_uzfs.sh -T all || true;
             #fi
