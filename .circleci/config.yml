@@ -10,8 +10,8 @@ jobs:
       enabled: true
     environment:
       - ZFS_BUILD_TAGS=0
-      - PWD=/home/circleci/project/zfs1
-    working_directory: ~/github.com/Pradeepkumarbk/zfs1
+      #- PWD=/home/circleci/project/zfs1
+    working_directory: ~/github.com/Pradeepkumarbk
     steps:
       - checkout
       - run: printf "%f,$PWD"
@@ -20,9 +20,9 @@ jobs:
             sudo apt-get update
             sudo apt-get install bc
             sudo apt-get install git -y
-            #git clone https://github.com/Pradeepkumarbk/zfs1
+            git clone https://github.com/Pradeepkumarbk/zfs1
             ls
-            #cd zfs1
+            cd zfs1
             pwd
             sudo apt-get install -y software-properties-common
             sudo add-apt-repository --yes ppa:zfs-native/stable
@@ -72,6 +72,6 @@ jobs:
             fi
             make cstyle;
             if [ "$ZFS_BUILD_TAGS" = "0" ]; then
-              export FIO_SRCDIR=$PWD/../fio;
+              export FIO_SRCDIR=$PWD/fio;
               sudo bash ./tests/cbtest/script/test_uzfs.sh -T all || true;
             fi
