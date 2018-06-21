@@ -4,7 +4,7 @@ jobs:
     machine:
       enabled: true
     environment:
-      # - ZFS_BUILD_TAGS=0
+      # - ZFSBUILD_TAGS=0
       - ZFS_BUILD_TAGS=1
     #working_directory: github.com/Pradeepkumarbk/zfs1
     steps:
