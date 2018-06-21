@@ -6,8 +6,8 @@ jobs:
         - master
 jobs:
   build:
-    machine: 
-      enabled: true
+    machine: true
+      #enabled: true
     environment:
       - ZFS_BUILD_TAGS=0
       - PWD=/home/circleci/project/zfs1
