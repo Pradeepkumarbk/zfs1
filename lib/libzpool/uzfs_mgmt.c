@@ -20,6 +20,7 @@
  */
 
 #include <sys/dmu_objset.h>
+#include <sys/dsl_destroy.h>
 #include <sys/zap.h>
 #include <sys/dsl_prop.h>
 #include <sys/uzfs_zvol.h>
@@ -29,9 +30,11 @@
 #include <uzfs_mgmt.h>
 #include <uzfs_io.h>
 #include <uzfs_zap.h>
+#include <uzfs_rebuilding.h>
 
 static int uzfs_fd_rand = -1;
 kmutex_t zvol_list_mutex;
+char *uzfs_spa_tag = "UZFS_SPA_TAG";
 
 static nvlist_t *
 make_root(char *path, int ashift, int log)
@@ -104,6 +107,7 @@ uzfs_init(void)
 	int err = 0;
 
 	kernel_init(FREAD | FWRITE);
+	SLIST_INIT(&zvol_list);
 	uzfs_fd_rand = open("/dev/urandom", O_RDONLY);
 	if (uzfs_fd_rand == -1)
 		err = errno;
@@ -116,7 +120,7 @@ uzfs_init(void)
 void
 uzfs_close_pool(spa_t *spa)
 {
-	spa_close(spa, "UZFS_SPA_TAG");
+	spa_close(spa, uzfs_spa_tag);
 }
 
 /*
@@ -126,7 +130,7 @@ int
 uzfs_open_pool(char *name, spa_t **s)
 {
 	spa_t *spa = NULL;
-	int err = spa_open(name, &spa, "UZFS_SPA_TAG");
+	int err = spa_open(name, &spa, uzfs_spa_tag);
 	if (err != 0) {
 		spa = NULL;
 		goto ret;
@@ -197,6 +201,7 @@ uzfs_zvol_create_meta(objset_t *os, uint64_t block_size,
     uint64_t meta_block_size, dmu_tx_t *tx)
 {
 	uint64_t metadatasize;
+	uint64_t io_seqnum = 0;
 	int error;
 
 	if (meta_block_size > block_size)
@@ -211,6 +216,14 @@ uzfs_zvol_create_meta(objset_t *os, uint64_t block_size,
 	    &metadatasize, tx);
 	if (error != 0)
 		return (error);
+
+	error = zap_update(os, ZVOL_ZAP_OBJ, HEALTHY_IO_SEQNUM, 8, 1,
+	    &io_seqnum, tx);
+	ASSERT(error == 0);
+
+	error = zap_update(os, ZVOL_ZAP_OBJ, DEGRADED_IO_SEQNUM, 8, 1,
+	    &io_seqnum, tx);
+	ASSERT(error == 0);
 
 	return (0);
 }
@@ -304,7 +317,7 @@ get_controller_ip(objset_t *os, char *buf, int len)
 
 /* owns objset with name 'ds_name' in pool 'spa' */
 static int
-uzfs_own_dataset(const char *ds_name, zvol_state_t **z)
+uzfs_dataset_zv_create(const char *ds_name, zvol_state_t **z)
 {
 	zvol_state_t *zv = NULL;
 	int error = -1;
@@ -330,6 +343,7 @@ uzfs_own_dataset(const char *ds_name, zvol_state_t **z)
 
 	zv->zv_spa = spa;
 	zfs_rlock_init(&zv->zv_range_lock);
+	mutex_init(&zv->rebuild_mtx, NULL, MUTEX_DEFAULT, NULL);
 
 	strlcpy(zv->zv_name, ds_name, MAXNAMELEN);
 
@@ -344,6 +358,7 @@ uzfs_own_dataset(const char *ds_name, zvol_state_t **z)
 disown_free:
 		dmu_objset_disown(zv->zv_objset, zv);
 free_ret:
+		mutex_destroy(&zv->rebuild_mtx);
 		zfs_rlock_destroy(&zv->zv_range_lock);
 		spa_close(spa, zv);
 		kmem_free(zv, sizeof (zvol_state_t));
@@ -388,6 +403,7 @@ free_ret:
 
 	/* On boot, mark zvol status health */
 	uzfs_zvol_set_status(zv, ZVOL_STATUS_DEGRADED);
+	uzfs_zvol_set_rebuild_status(zv, ZVOL_REBUILDING_INIT);
 
 	if (spa_writeable(dmu_objset_spa(os))) {
 //		if (zil_replay_disable)
@@ -416,7 +432,7 @@ uzfs_open_dataset(spa_t *spa, const char *ds_name, zvol_state_t **z)
 		return (error);
 	(void) snprintf(name, sizeof (name), "%s/%s", spa_name(spa), ds_name);
 
-	error = uzfs_own_dataset(name, z);
+	error = uzfs_dataset_zv_create(name, z);
 	return (error);
 }
 
@@ -457,6 +473,26 @@ ret:
 	return (error);
 }
 
+/*
+ * This function is checked if volume is internally
+ * created cloned volume for rebuild purpose.
+ * Input: Volume name [pool/volume_name].
+ * Output: 0 if volume is internally created cloned volume.
+ * Otherwise non-zero value.
+ */
+int
+is_internally_created_clone_volume(const char *ds_name)
+{
+	size_t ds_len  = strlen(ds_name);
+	size_t pattern_len = strlen(REBUILD_SNAPSHOT_CLONENAME);
+
+	if (ds_len < pattern_len)
+		return (-1);
+
+	return (strcmp(ds_name + (ds_len - pattern_len),
+	    REBUILD_SNAPSHOT_CLONENAME));
+}
+
 /* uZFS Zvol create call back function */
 int
 uzfs_zvol_create_cb(const char *ds_name, void *arg)
@@ -470,7 +506,15 @@ uzfs_zvol_create_cb(const char *ds_name, void *arg)
 		return (0);
 	}
 
-	error = uzfs_own_dataset(ds_name, &zv);
+	/*
+	 * Internally created cloned volume do not have target IP stored
+	 * infact they do not need to have zinfo and connection to target
+	 * as these are not meant for client/application.
+	 */
+	if (is_internally_created_clone_volume(ds_name) == 0)
+		return (0);
+
+	error = uzfs_dataset_zv_create(ds_name, &zv);
 	if (error) {
 		/* happens normally for all non-zvol-type datasets */
 		return (error);
@@ -521,6 +565,88 @@ uzfs_zvol_create_minors(spa_t *spa, const char *name)
 	kmem_free(pool_name, MAXNAMELEN);
 }
 
+/*
+ * For given zv, a snapshot with snap_name will be created if doesn't exists.
+ * Opens/holds the snapshot and fills the snap_zv.
+ * fail_exists being true returns EEXIST if snapshot already exists.
+ * fail_notexists being true returns ENOENT if snapshot doesn't exists.
+ */
+int
+get_snapshot_zv(zvol_state_t *zv, const char *snap_name, zvol_state_t **snap_zv,
+    boolean_t fail_exists, boolean_t fail_notexists)
+{
+	char *dataset;
+	int ret = 0;
+
+	dataset = kmem_asprintf("%s@%s", strchr(zv->zv_name, '/') + 1,
+	    snap_name);
+
+	ret = uzfs_open_dataset(zv->zv_spa, dataset, snap_zv);
+	if (ret == ENOENT) {
+		if (fail_notexists) {
+			LOG_ERR("fail on unavailable snapshot %s",
+			    dataset);
+			strfree(dataset);
+			ret = SET_ERROR(ENOENT);
+			return (ret);
+		}
+		ret = dmu_objset_snapshot_one(zv->zv_name, snap_name);
+		if (ret) {
+			LOG_ERR("Failed to create snapshot %s: %d",
+			    dataset, ret);
+			strfree(dataset);
+			return (ret);
+		}
+
+		ret = uzfs_open_dataset(zv->zv_spa, dataset, snap_zv);
+		if (ret == 0) {
+			ret = uzfs_hold_dataset(*snap_zv);
+			if (ret != 0) {
+				LOG_ERR("Failed to hold snapshot %s: %d",
+				    dataset, ret);
+				uzfs_close_dataset(*snap_zv);
+				*snap_zv = NULL;
+			}
+		}
+		else
+			LOG_ERR("Failed to open snapshot: %d", ret);
+	} else if (ret == 0) {
+		if (fail_exists) {
+			LOG_ERR("fail on already available snapshot %s",
+			    dataset);
+			uzfs_close_dataset(*snap_zv);
+			*snap_zv = NULL;
+			ret = SET_ERROR(EEXIST);
+		} else {
+			LOG_INFO("holding already available snapshot %s",
+			    dataset);
+			ret = uzfs_hold_dataset(*snap_zv);
+			if (ret != 0) {
+				LOG_ERR("Failed to hold already existing "
+				    "snapshot %s: %d", dataset, ret);
+				uzfs_close_dataset(*snap_zv);
+				*snap_zv = NULL;
+			}
+		}
+	} else
+		LOG_ERR("Failed to open snapshot: %d", ret);
+
+	strfree(dataset);
+	return (ret);
+}
+
+int
+destroy_snapshot_zv(zvol_state_t *zv, char *snap_name)
+{
+	char *dataset;
+	int ret;
+
+	dataset = kmem_asprintf("%s@%s", zv->zv_name, snap_name);
+	ret = dsl_destroy_snapshot(dataset, B_FALSE);
+	strfree(dataset);
+	return (ret);
+}
+
 /* uZFS Zvol destroy call back function */
 int
 uzfs_zvol_destroy_cb(const char *ds_name, void *arg)
@@ -528,9 +654,8 @@ uzfs_zvol_destroy_cb(const char *ds_name, void *arg)
 	return (uzfs_zinfo_destroy(ds_name, arg));
 }
 
-/* disowns, closes dataset */
 void
-uzfs_close_dataset(zvol_state_t *zv)
+uzfs_rele_dataset(zvol_state_t *zv)
 {
 	if (zv->zv_zilog != NULL)
 		zil_close(zv->zv_zilog);
@@ -538,6 +663,17 @@ uzfs_close_dataset(zvol_state_t *zv)
 		dnode_rele(zv->zv_dn, zv);
 	if (zv->zv_objset != NULL)
 		dmu_objset_disown(zv->zv_objset, zv);
+	zv->zv_zilog = NULL;
+	zv->zv_dn = NULL;
+	zv->zv_objset = NULL;
+}
+
+/* disowns, closes dataset */
+void
+uzfs_close_dataset(zvol_state_t *zv)
+{
+	uzfs_rele_dataset(zv);
+	mutex_destroy(&zv->rebuild_mtx);
 	zfs_rlock_destroy(&zv->zv_range_lock);
 	spa_close(zv->zv_spa, zv);
 	kmem_free(zv, sizeof (zvol_state_t));

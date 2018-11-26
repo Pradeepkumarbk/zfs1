@@ -515,6 +515,7 @@ extern int	taskq_member(taskq_t *, kthread_t *);
 extern int	taskq_cancel_id(taskq_t *, taskqid_t);
 extern void	system_taskq_init(void);
 extern void	system_taskq_fini(void);
+extern int taskq_check_active_ios(taskq_t *tq);
 
 #define	XVA_MAPSIZE	3
 #define	XVA_MAGIC	0x78766174
@@ -798,6 +799,9 @@ extern fstrans_cookie_t spl_fstrans_mark(void);
 extern void spl_fstrans_unmark(fstrans_cookie_t);
 extern int __spl_pf_fstrans_check(void);
 
+#define	console_printf(args...)	fprintf(stderr, args)
+#define	console_vprintf(fmt, ap)	vfprintf(stderr, fmt, ap)
+#define	schedule()	pthread_yield()
 #ifdef	__cplusplus
 }
 #endif

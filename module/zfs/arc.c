@@ -280,6 +280,7 @@
 #include <sys/fs/swapnode.h>
 #include <sys/zpl.h>
 #include <linux/mm_compat.h>
+#include <linux/page_compat.h>
 #endif
 #include <sys/callb.h>
 #include <sys/kstat.h>
@@ -391,7 +392,6 @@ unsigned long zfs_arc_dnode_limit_percent = 10;
  */
 unsigned long zfs_arc_sys_free = 0;
 int zfs_arc_min_prefetch_lifespan = 0;
-int zfs_arc_p_aggressive_disable = 1;
 int zfs_arc_p_dampener_disable = 1;
 int zfs_arc_meta_prune = 10000;
 int zfs_arc_meta_strategy = ARC_STRATEGY_META_BALANCED;
@@ -430,8 +430,13 @@ typedef struct arc_stats {
 	 */
 	kstat_named_t arcstat_mutex_miss;
 	/*
+	 * Number of buffers skipped when updating the access state due to the
+	 * header having already been released after acquiring the hash lock.
+	 */
+	kstat_named_t arcstat_access_skip;
+	/*
 	 * Number of buffers skipped because they have I/O in progress, are
-	 * indrect prefetch buffers that have not lived long enough, or are
+	 * indirect prefetch buffers that have not lived long enough, or are
 	 * not from the spa we're trying to evict from.
 	 */
 	kstat_named_t arcstat_evict_skip;
@@ -667,6 +672,7 @@ static arc_stats_t arc_stats = {
 	{ "mfu_ghost_hits",		KSTAT_DATA_UINT64 },
 	{ "deleted",			KSTAT_DATA_UINT64 },
 	{ "mutex_miss",			KSTAT_DATA_UINT64 },
+	{ "access_skip",		KSTAT_DATA_UINT64 },
 	{ "evict_skip",			KSTAT_DATA_UINT64 },
 	{ "evict_not_enough",		KSTAT_DATA_UINT64 },
 	{ "evict_l2_cached",		KSTAT_DATA_UINT64 },
@@ -3993,7 +3999,7 @@ arc_all_memory(void)
 	return (ptob(totalram_pages));
 #endif /* CONFIG_HIGHMEM */
 #else
-	return (ptob(physmem) / 2);
+	return (ptob(physmem) / 4);
 #endif /* _KERNEL */
 }
 
@@ -4011,17 +4017,11 @@ arc_free_memory(void)
 	si_meminfo(&si);
 	return (ptob(si.freeram - si.freehigh));
 #else
-#ifdef ZFS_GLOBAL_NODE_PAGE_STATE
 	return (ptob(nr_free_pages() +
-	    global_node_page_state(NR_INACTIVE_FILE) +
-	    global_node_page_state(NR_INACTIVE_ANON) +
-	    global_node_page_state(NR_SLAB_RECLAIMABLE)));
-#else
-	return (ptob(nr_free_pages() +
-	    global_page_state(NR_INACTIVE_FILE) +
-	    global_page_state(NR_INACTIVE_ANON) +
-	    global_page_state(NR_SLAB_RECLAIMABLE)));
-#endif /* ZFS_GLOBAL_NODE_PAGE_STATE */
+	    nr_inactive_file_pages() +
+	    nr_inactive_anon_pages() +
+	    nr_slab_reclaimable_pages()));
+
 #endif /* CONFIG_HIGHMEM */
 #else
 	return (spa_get_random(arc_all_memory() * 20 / 100));
@@ -4432,13 +4432,7 @@ arc_evictable_memory(void)
 	 * Scale reported evictable memory in proportion to page cache, cap
 	 * at specified min/max.
 	 */
-#ifdef ZFS_GLOBAL_NODE_PAGE_STATE
-	uint64_t min = (ptob(global_node_page_state(NR_FILE_PAGES)) / 100) *
-	    zfs_arc_pc_percent;
-#else
-	uint64_t min = (ptob(global_page_state(NR_FILE_PAGES)) / 100) *
-	    zfs_arc_pc_percent;
-#endif
+	uint64_t min = (ptob(nr_file_pages()) / 100) * zfs_arc_pc_percent;
 	min = MAX(arc_c_min, MIN(arc_c_max, min));
 
 	if (arc_dirty >= min)
@@ -4926,7 +4920,51 @@ arc_access(arc_buf_hdr_t *hdr, kmutex_t *hash_lock)
 	}
 }
 
-/* a generic arc_done_func_t which you can use */
+/*
+ * This routine is called by dbuf_hold() to update the arc_access() state
+ * which otherwise would be skipped for entries in the dbuf cache.
+ */
+void
+arc_buf_access(arc_buf_t *buf)
+{
+	mutex_enter(&buf->b_evict_lock);
+	arc_buf_hdr_t *hdr = buf->b_hdr;
+
+	/*
+	 * Avoid taking the hash_lock when possible as an optimization.
+	 * The header must be checked again under the hash_lock in order
+	 * to handle the case where it is concurrently being released.
+	 */
+	if (hdr->b_l1hdr.b_state == arc_anon || HDR_EMPTY(hdr)) {
+		mutex_exit(&buf->b_evict_lock);
+		return;
+	}
+
+	kmutex_t *hash_lock = HDR_LOCK(hdr);
+	mutex_enter(hash_lock);
+
+	if (hdr->b_l1hdr.b_state == arc_anon || HDR_EMPTY(hdr)) {
+		mutex_exit(hash_lock);
+		mutex_exit(&buf->b_evict_lock);
+		ARCSTAT_BUMP(arcstat_access_skip);
+		return;
+	}
+
+	mutex_exit(&buf->b_evict_lock);
+
+	ASSERT(hdr->b_l1hdr.b_state == arc_mru ||
+	    hdr->b_l1hdr.b_state == arc_mfu);
+
+	DTRACE_PROBE1(arc__hit, arc_buf_hdr_t *, hdr);
+	arc_access(hdr, hash_lock);
+	mutex_exit(hash_lock);
+
+	ARCSTAT_BUMP(arcstat_hits);
+	ARCSTAT_CONDSTAT(!HDR_PREFETCH(hdr), demand, prefetch,
+	    !HDR_ISTYPE_METADATA(hdr), data, metadata, hits);
+}
+
+/* a generic arc_read_done_func_t which you can use */
 /* ARGSUSED */
 void
 arc_bcopy_func(zio_t *zio, arc_buf_t *buf, void *arg)
@@ -6320,7 +6358,7 @@ arc_tuning_update(void)
 
 	/* Valid range: 64M - <all physical memory> */
 	if ((zfs_arc_max) && (zfs_arc_max != arc_c_max) &&
-	    (zfs_arc_max > 64 << 20) && (zfs_arc_max < allmem) &&
+	    (zfs_arc_max >= 64 << 20) && (zfs_arc_max < allmem) &&
 	    (zfs_arc_max > arc_c_min)) {
 		arc_c_max = zfs_arc_max;
 		arc_c = arc_c_max;
@@ -7877,9 +7915,6 @@ MODULE_PARM_DESC(zfs_arc_meta_strategy, "Meta reclaim strategy");
 
 module_param(zfs_arc_grow_retry, int, 0644);
 MODULE_PARM_DESC(zfs_arc_grow_retry, "Seconds before growing arc size");
-
-module_param(zfs_arc_p_aggressive_disable, int, 0644);
-MODULE_PARM_DESC(zfs_arc_p_aggressive_disable, "disable aggressive arc_p grow");
 
 module_param(zfs_arc_p_dampener_disable, int, 0644);
 MODULE_PARM_DESC(zfs_arc_p_dampener_disable, "disable arc_p adapt dampener");

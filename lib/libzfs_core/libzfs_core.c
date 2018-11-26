@@ -241,7 +241,7 @@ lzc_promote(const char *fsname, char *snapnamebuf, int snapnamelen)
 	VERIFY3S(g_fd, !=, -1);
 
 	(void) strlcpy(zc.zc_name, fsname, sizeof (zc.zc_name));
-	if (ioctl(g_fd, ZFS_IOC_PROMOTE, &zc) != 0) {
+	if (uzfs_ioctl(g_fd, ZFS_IOC_PROMOTE, &zc) != 0) {
 		int error = errno;
 		if (error == EEXIST && snapnamebuf != NULL)
 			(void) strlcpy(snapnamebuf, zc.zc_string, snapnamelen);
@@ -398,6 +398,12 @@ int
 lzc_sync(const char *pool_name, nvlist_t *innvl, nvlist_t **outnvl)
 {
 	return (lzc_ioctl(ZFS_IOC_POOL_SYNC, pool_name, innvl, NULL));
+}
+
+int
+lzc_stats(const char *dataset, nvlist_t *innvl, nvlist_t **outnvl)
+{
+	return (lzc_ioctl(ZFS_IOC_STATS, dataset, NULL, outnvl));
 }
 
 /*

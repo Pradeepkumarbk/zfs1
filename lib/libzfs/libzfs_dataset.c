@@ -346,7 +346,8 @@ get_recvd_props_ioctl(zfs_handle_t *zhp)
 
 	(void) strlcpy(zc.zc_name, zhp->zfs_name, sizeof (zc.zc_name));
 
-	while (ioctl(hdl->libzfs_fd, ZFS_IOC_OBJSET_RECVD_PROPS, &zc) != 0) {
+	while (uzfs_ioctl(hdl->libzfs_fd, ZFS_IOC_OBJSET_RECVD_PROPS,
+	    &zc) != 0) {
 		if (errno == ENOMEM) {
 			if (zcmd_expand_dst_nvlist(hdl, &zc) != 0) {
 				return (-1);
@@ -1031,10 +1032,11 @@ zfs_valid_proplist(libzfs_handle_t *hdl, zfs_type_t type, nvlist_t *nvl,
 
 		if (prop == ZPROP_INVAL && zfs_prop_userquota(propname)) {
 			zfs_userquota_prop_t uqtype;
-			char newpropname[128];
+			char *newpropname = NULL;
 			char domain[128];
 			uint64_t rid;
 			uint64_t valary[3];
+			int rc;
 
 			if (userquota_propname_decode(propname, zoned,
 			    &uqtype, domain, sizeof (domain), &rid) != 0) {
@@ -1089,17 +1091,24 @@ zfs_valid_proplist(libzfs_handle_t *hdl, zfs_type_t type, nvlist_t *nvl,
 			 * userquota@<hex-rid>-domain, to make it easy
 			 * for the kernel to decode.
 			 */
-			(void) snprintf(newpropname, sizeof (newpropname),
-			    "%s%llx-%s", zfs_userquota_prop_prefixes[uqtype],
+			rc = asprintf(&newpropname, "%s%llx-%s",
+			    zfs_userquota_prop_prefixes[uqtype],
 			    (longlong_t)rid, domain);
+			if (rc == -1 || newpropname == NULL) {
+				(void) no_memory(hdl);
+				goto error;
+			}
+
 			valary[0] = uqtype;
 			valary[1] = rid;
 			valary[2] = intval;
 			if (nvlist_add_uint64_array(ret, newpropname,
 			    valary, 3) != 0) {
+				free(newpropname);
 				(void) no_memory(hdl);
 				goto error;
 			}
+			free(newpropname);
 			continue;
 		} else if (prop == ZPROP_INVAL && zfs_prop_written(propname)) {
 			zfs_error_aux(hdl, dgettext(TEXT_DOMAIN,
@@ -2245,8 +2254,10 @@ static void
 get_source(zfs_handle_t *zhp, zprop_source_t *srctype, char *source,
     char *statbuf, size_t statlen)
 {
-	if (statbuf == NULL || *srctype == ZPROP_SRC_TEMPORARY)
+	if (statbuf == NULL ||
+	    srctype == NULL || *srctype == ZPROP_SRC_TEMPORARY) {
 		return;
+	}
 
 	if (source == NULL) {
 		*srctype = ZPROP_SRC_NONE;
@@ -2980,7 +2991,7 @@ zfs_prop_get_userquota_common(zfs_handle_t *zhp, const char *propname,
 	if (err)
 		return (err);
 
-	err = ioctl(zhp->zfs_hdl->libzfs_fd, ZFS_IOC_USERSPACE_ONE, &zc);
+	err = uzfs_ioctl(zhp->zfs_hdl->libzfs_fd, ZFS_IOC_USERSPACE_ONE, &zc);
 	if (err)
 		return (err);
 
@@ -3054,7 +3065,7 @@ zfs_prop_get_written_int(zfs_handle_t *zhp, const char *propname,
 		(void) strlcat(zc.zc_value, snapname, sizeof (zc.zc_value));
 	}
 
-	err = ioctl(zhp->zfs_hdl->libzfs_fd, ZFS_IOC_SPACE_WRITTEN, &zc);
+	err = uzfs_ioctl(zhp->zfs_hdl->libzfs_fd, ZFS_IOC_SPACE_WRITTEN, &zc);
 	if (err)
 		return (err);
 
@@ -3185,7 +3196,7 @@ check_parents(libzfs_handle_t *hdl, const char *path, uint64_t *zoned,
 		slash = parent + strlen(parent);
 	(void) strncpy(zc.zc_name, parent, slash - parent);
 	zc.zc_name[slash - parent] = '\0';
-	if (ioctl(hdl->libzfs_fd, ZFS_IOC_OBJSET_STATS, &zc) != 0 &&
+	if (uzfs_ioctl(hdl->libzfs_fd, ZFS_IOC_OBJSET_STATS, &zc) != 0 &&
 	    errno == ENOENT) {
 		zfs_error_aux(hdl, dgettext(TEXT_DOMAIN,
 		    "no such pool '%s'"), zc.zc_name);
@@ -4435,7 +4446,7 @@ zfs_smb_acl_mgmt(libzfs_handle_t *hdl, char *dataset, char *path,
 	default:
 		return (-1);
 	}
-	error = ioctl(hdl->libzfs_fd, ZFS_IOC_SMB_ACL, &zc);
+	error = uzfs_ioctl(hdl->libzfs_fd, ZFS_IOC_SMB_ACL, &zc);
 	nvlist_free(nvlist);
 	return (error);
 }
@@ -4785,7 +4796,7 @@ tryagain:
 
 	(void) strlcpy(zc.zc_name, zhp->zfs_name, sizeof (zc.zc_name));
 
-	if (ioctl(hdl->libzfs_fd, ZFS_IOC_GET_FSACL, &zc) != 0) {
+	if (uzfs_ioctl(hdl->libzfs_fd, ZFS_IOC_GET_FSACL, &zc) != 0) {
 		(void) snprintf(errbuf, sizeof (errbuf),
 		    dgettext(TEXT_DOMAIN, "cannot get permissions on '%s'"),
 		    zc.zc_name);

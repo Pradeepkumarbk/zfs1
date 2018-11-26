@@ -1380,7 +1380,7 @@ dump_filesystem(zfs_handle_t *zhp, void *arg)
 		 */
 		(void) snprintf(zc.zc_name, sizeof (zc.zc_name), "%s@%s",
 		    zhp->zfs_name, sdd->fromsnap);
-		if (ioctl(zhp->zfs_hdl->libzfs_fd,
+		if (uzfs_ioctl(zhp->zfs_hdl->libzfs_fd,
 		    ZFS_IOC_OBJSET_STATS, &zc) != 0) {
 			missingfrom = B_TRUE;
 		}
@@ -2202,7 +2202,7 @@ recv_rename(libzfs_handle_t *hdl, const char *name, const char *tryname,
 			(void) printf("attempting rename %s to %s\n",
 			    zc.zc_name, zc.zc_value);
 		}
-		err = ioctl(hdl->libzfs_fd, ZFS_IOC_RENAME, &zc);
+		err = uzfs_ioctl(hdl->libzfs_fd, ZFS_IOC_RENAME, &zc);
 		if (err == 0)
 			changelist_rename(clp, name, tryname);
 	} else {
@@ -2220,7 +2220,7 @@ recv_rename(libzfs_handle_t *hdl, const char *name, const char *tryname,
 			(void) printf("failed - trying rename %s to %s\n",
 			    zc.zc_name, zc.zc_value);
 		}
-		err = ioctl(hdl->libzfs_fd, ZFS_IOC_RENAME, &zc);
+		err = uzfs_ioctl(hdl->libzfs_fd, ZFS_IOC_RENAME, &zc);
 		if (err == 0)
 			changelist_rename(clp, name, newname);
 		if (err && flags->verbose) {
@@ -2274,7 +2274,7 @@ recv_destroy(libzfs_handle_t *hdl, const char *name, int baselen,
 
 	if (flags->verbose)
 		(void) printf("attempting destroy %s\n", zc.zc_name);
-	err = ioctl(hdl->libzfs_fd, ZFS_IOC_DESTROY, &zc);
+	err = uzfs_ioctl(hdl->libzfs_fd, ZFS_IOC_DESTROY, &zc);
 	if (err == 0) {
 		if (flags->verbose)
 			(void) printf("success\n");
@@ -3254,8 +3254,9 @@ zfs_receive_one(libzfs_handle_t *hdl, int infd, const char *tosnap,
 	nvlist_t *oxprops = NULL; /* override (-o) and exclude (-x) props */
 	nvlist_t *origprops = NULL; /* original props (if destination exists) */
 	zfs_type_t type;
-	boolean_t toplevel;
+	boolean_t toplevel = B_FALSE;
 	boolean_t zoned = B_FALSE;
+	boolean_t hastoken = B_FALSE;
 
 	begin_time = time(NULL);
 	bzero(origin, MAXNAMELEN);
@@ -3381,7 +3382,7 @@ zfs_receive_one(libzfs_handle_t *hdl, int infd, const char *tosnap,
 	 * Determine the name of the origin snapshot.
 	 */
 	if (originsnap) {
-		(void) strncpy(origin, originsnap, sizeof (origin));
+		(void) strlcpy(origin, originsnap, sizeof (origin));
 		if (flags->verbose)
 			(void) printf("using provided clone origin %s\n",
 			    origin);
@@ -3479,8 +3480,8 @@ zfs_receive_one(libzfs_handle_t *hdl, int infd, const char *tosnap,
 				err = zfs_error(hdl, EZFS_EXISTS, errbuf);
 				goto out;
 			}
-			if (ioctl(hdl->libzfs_fd, ZFS_IOC_SNAPSHOT_LIST_NEXT,
-			    &zc) == 0) {
+			if (uzfs_ioctl(hdl->libzfs_fd,
+			    ZFS_IOC_SNAPSHOT_LIST_NEXT, &zc) == 0) {
 				zfs_error_aux(hdl, dgettext(TEXT_DOMAIN,
 				    "destination has snapshots (eg. %s)\n"
 				    "must destroy them to overwrite it"),
@@ -3537,6 +3538,11 @@ zfs_receive_one(libzfs_handle_t *hdl, int infd, const char *tosnap,
 		/* we want to know if we're zoned when validating -o|-x props */
 		zoned = zfs_prop_get_int(zhp, ZFS_PROP_ZONED);
 
+		/* may need this info later, get it now we have zhp around */
+		if (zfs_prop_get(zhp, ZFS_PROP_RECEIVE_RESUME_TOKEN, NULL, 0,
+		    NULL, NULL, 0, B_TRUE) == 0)
+			hastoken = B_TRUE;
+
 		/* gather existing properties on destination */
 		origprops = fnvlist_alloc();
 		fnvlist_merge(origprops, zhp->zfs_props);
@@ -3588,7 +3594,8 @@ zfs_receive_one(libzfs_handle_t *hdl, int infd, const char *tosnap,
 		goto out;
 	}
 
-	toplevel = chopprefix[0] != '/';
+	if (top_zfs && *top_zfs == NULL)
+		toplevel = B_TRUE;
 	if (drrb->drr_type == DMU_OST_ZVOL) {
 		type = ZFS_TYPE_VOLUME;
 	} else if (drrb->drr_type == DMU_OST_ZFS) {
@@ -3742,9 +3749,19 @@ zfs_receive_one(libzfs_handle_t *hdl, int infd, const char *tosnap,
 			break;
 		case EDQUOT:
 			zfs_error_aux(hdl, dgettext(TEXT_DOMAIN,
-			    "destination %s space quota exceeded"), name);
+			    "destination %s space quota exceeded."), name);
 			(void) zfs_error(hdl, EZFS_NOSPC, errbuf);
 			break;
+		case EBUSY:
+			if (hastoken) {
+				zfs_error_aux(hdl, dgettext(TEXT_DOMAIN,
+				    "destination %s contains "
+				    "partially-complete state from "
+				    "\"zfs receive -s\"."), name);
+				(void) zfs_error(hdl, EZFS_BUSY, errbuf);
+				break;
+			}
+			/* fallthru */
 		default:
 			(void) zfs_standard_error(hdl, ioctl_errno, errbuf);
 		}

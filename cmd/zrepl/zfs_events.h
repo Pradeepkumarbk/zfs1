@@ -22,27 +22,9 @@
  * Copyright (c) 2018 Cloudbyte. All rights reserved.
  */
 
-#ifndef _REBUILD_H
-#define	_REBUILD_H
+#ifndef	ZFS_EVENTS_H
+#define	ZFS_EVENTS_H
 
-#include <zrepl_prot.h>
-#include <zrepl_mgmt.h>
+void zrepl_monitor_errors(void);
 
-typedef struct rebuild_thread_arg {
-	zvol_info_t	*zinfo;
-	char		zvol_name[MAX_NAME_LEN];
-	int		fd;
-	char		ip[MAX_IP_LEN];
-	uint16_t	port;
-} rebuild_thread_arg_t;
-
-zvol_io_cmd_t *zio_cmd_alloc(zvol_io_hdr_t *hdr, int fd);
-void zio_cmd_free(zvol_io_cmd_t **cmd);
-int uzfs_zvol_socket_read(int fd, char *buf, uint64_t nbytes);
-int uzfs_zvol_socket_write(int fd, char *buf, uint64_t nbytes);
-void uzfs_zvol_worker(void *arg);
-void uzfs_zvol_rebuild_dw_replica(void *arg);
-void uzfs_update_ionum_interval(zvol_info_t *zinfo, uint32_t timeout);
-void uzfs_zvol_timer_thread(void);
-
-#endif /* _REBUILD_H */
+#endif	/* ZFS_EVENTS_H */

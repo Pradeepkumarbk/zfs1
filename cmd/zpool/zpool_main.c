@@ -6402,6 +6402,15 @@ status_callback(zpool_handle_t *zhp, void *data)
 		    "to be recovered.\n"));
 		break;
 
+	case ZPOOL_STATUS_IO_FAILURE_MMP:
+		(void) printf(gettext("status: The pool is suspended because "
+		    "multihost writes failed or were delayed;\n\tanother "
+		    "system could import the pool undetected.\n"));
+		(void) printf(gettext("action: Make sure the pool's devices "
+		    "are connected, then reboot your system and\n\timport the "
+		    "pool.\n"));
+		break;
+
 	case ZPOOL_STATUS_IO_FAILURE_WAIT:
 	case ZPOOL_STATUS_IO_FAILURE_CONTINUE:
 		(void) printf(gettext("status: One or more devices are "
@@ -8026,7 +8035,8 @@ main(int argc, char **argv)
 		char buf[16384];
 		int fd = open(ZFS_DEV, O_RDWR);
 		(void) strlcpy((void *)buf, argv[2], sizeof (buf));
-		return (!!ioctl(fd, ZFS_IOC_POOL_FREEZE, buf));
+		return (!!uzfs_ioctl(fd, ZFS_IOC_POOL_FREEZE,
+		    (zfs_cmd_t *)buf));
 	} else {
 		(void) fprintf(stderr, gettext("unrecognized "
 		    "command '%s'\n"), cmdname);

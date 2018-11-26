@@ -1,0 +1,94 @@
+#!/bin/bash
+set -e
+
+if [ -z ${CIRCLE_PROJECT_REPONAME} ];
+then
+  echo "Error: CIRCLE_PROJECT_REPONAME is not specified";
+  exit 1
+fi
+
+IMAGEID=$( sudo docker images -q ${CIRCLE_PROJECT_REPONAME}:ci )
+echo $IMAGEID 
+if [ -z ${IMAGEID} ];
+then
+  echo "Error: unable to get IMAGEID for ${CIRCLE_PROJECT_REPONAME}:ci";
+  exit 1
+fi
+
+# Get an unique id based on commit and tag
+BUILD_ID=$(git describe --tags --always)
+
+# Determine the current branch
+CURRENT_BRANCH=""
+if [ -z ${CIRCLE_BRANCH} ];
+then
+  CURRENT_BRANCH=$(git branch | grep \* | cut -d ' ' -f2)
+else
+  CURRENT_BRANCH=${CIRCLE_BRANCH}
+fi
+
+#Depending on the branch where builds are generated, 
+# set the tag CI (fixed) and build tags.
+BUILD_TAG="${CURRENT_BRANCH}-${BUILD_ID}"
+CI_TAG="${CURRENT_BRANCH}-ci"
+if [ ${CURRENT_BRANCH} = "zfs-0.7-release" ]; then
+  CI_TAG="ci"
+fi
+
+echo "Set the fixed ci image tag as: ${CI_TAG}"
+echo "Set the build/unique image tag as: ${BUILD_TAG}"
+
+function TagAndPushImage() {
+  REPO="$1"
+  TAG="$2"
+  
+  IMAGE_URI="${REPO}:${TAG}";
+  sudo docker tag ${IMAGEID} ${IMAGE_URI};
+  echo "Pushing ${IMAGE_URI}";
+  sudo docker push ${IMAGE_URI};
+}
+
+if [ ! -z "${DOCKER_USER}" ] && [ ! -z "${DOCKER_PASS}" ];
+then
+  sudo docker login -u "${DOCKER_USER}" -p "${DOCKER_PASS}";
+
+  # Push CI tagged image - :ci or :branch-ci
+  TagAndPushImage "${CIRCLE_PROJECT_REPONAME}" "${CI_TAG}"
+
+  # Push unique tagged image - :master-<uuid> or :branch-<uuid>
+  # This unique/build image will be pushed to corresponding ci repo. 
+  TagAndPushImage "${CIRCLE_PROJECT_REPONAME}-ci" "${BUILD_TAG}"
+
+
+  if [ ! -z "${CIRCLE_TAG}" ] ;
+  then
+    # Push with different tags if tagged as a release
+    # When github is tagged with a release, then Travis will
+    # set the release tag in env CIRCLE_TAG
+    TagAndPushImage "${CIRCLE_PROJECT_REPONAME}" "${CIRCLE_TAG}"
+    TagAndPushImage "${CIRCLE_PROJECT_REPONAME}" "latest"
+  fi;
+else
+  echo "No docker credentials provided. Skip uploading ${CIRCLE_PROJECT_REPONAME} to docker hub";
+fi;
+
+# Push ci image to quay.io for security scanning
+if [ ! -z "${QNAME}" ] && [ ! -z "${QPASS}" ]; 
+then 
+  sudo docker login -u "${QNAME}" -p "${QPASS}" quay.io;
+
+  # Push CI tagged image - :ci or :branch-ci
+  TagAndPushImage "quay.io/${CIRCLE_PROJECT_REPONAME}" "${CI_TAG}"
+
+  if [ ! -z "${CIRCLE_TAG}" ] ;
+  then
+    # Push with different tags if tagged as a release
+    # When github is tagged with a release, then Travis will
+    # set the release tag in env CIRCLE_TAG
+    TagAndPushImage "quay.io/${CIRCLE_PROJECT_REPONAME}" "${CIRCLE_TAG}"
+    TagAndPushImage "quay.io/${CIRCLE_PROJECT_REPONAME}" "latest"
+  fi;
+else
+  echo "No docker credentials provided. Skip uploading ${CIRCLE_PROJECT_REPONAME} to quay";
+fi;
+

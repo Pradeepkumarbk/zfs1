@@ -45,12 +45,13 @@ extern "C" {
  * properly aligned (and packed).
  */
 
-#define	REPLICA_VERSION	1
+#define	REPLICA_VERSION	2
 #define	MAX_NAME_LEN	256
 #define	MAX_IP_LEN	64
 #define	TARGET_PORT	6060
 
-#define	ZVOL_OP_FLAG_REBUILD 0x01
+#define	ZVOL_OP_FLAG_REBUILD		0x01
+#define	ZVOL_OP_FLAG_READ_METADATA	0x02
 
 enum zvol_op_code {
 	// Used to obtain info about a zvol on mgmt connection
@@ -67,9 +68,14 @@ enum zvol_op_code {
 	ZVOL_OPCODE_START_REBUILD,
 	ZVOL_OPCODE_REBUILD_STEP,
 	ZVOL_OPCODE_REBUILD_STEP_DONE,
+	ZVOL_OPCODE_REBUILD_SNAP_DONE,
+	ZVOL_OPCODE_REBUILD_ALL_SNAP_DONE,
 	ZVOL_OPCODE_REBUILD_COMPLETE,
 	ZVOL_OPCODE_SNAP_CREATE,
 	ZVOL_OPCODE_SNAP_DESTROY,
+	ZVOL_OPCODE_SNAP_LIST,
+	ZVOL_OPCODE_RESIZE,
+	ZVOL_OPCODE_STATS,
 } __attribute__((packed));
 
 typedef enum zvol_op_code zvol_op_code_t;
@@ -92,7 +98,12 @@ struct zvol_io_hdr {
 	zvol_op_status_t status;
 	uint8_t 	flags;
 	uint8_t 	padding[3];
-	uint64_t	io_seq;
+	union {
+		/* IOnum as sent from target */
+		uint64_t	io_seq;
+		/* IOnum from which rebuild need to be done */
+		uint64_t	checkpointed_io_seq;
+	};
 	/* only used for read/write */
 	uint64_t	offset;
 	/*
@@ -103,7 +114,6 @@ struct zvol_io_hdr {
 	 * meta data.
 	 */
 	uint64_t	len;
-	uint64_t	checkpointed_io_seq;
 } __attribute__((packed));
 
 typedef struct zvol_io_hdr zvol_io_hdr_t;
@@ -121,12 +131,16 @@ typedef struct zvol_op_open_data zvol_op_open_data_t;
  * IP, port where replica listens for data connection to zvol.
  */
 struct mgmt_ack {
-	uint64_t pool_guid;
-	uint64_t zvol_guid;
-	uint16_t port;
-	char	ip[MAX_IP_LEN];
-	char	volname[MAX_NAME_LEN]; // Replica helping rebuild
-	char	dw_volname[MAX_NAME_LEN]; // Replica being rebuilt
+	uint64_t	pool_guid;
+	uint64_t	zvol_guid;
+	uint16_t	port;
+	char		ip[MAX_IP_LEN];
+	char		volname[MAX_NAME_LEN]; // zvol helping rebuild
+	char		dw_volname[MAX_NAME_LEN]; // zvol being rebuilt
+	// checkpointed io_seq when vol is healthy
+	uint64_t	checkpointed_io_seq;
+	// checkpointed io_seq when vol is in degraded state
+	uint64_t	checkpointed_degraded_io_seq;
 } __attribute__((packed));
 
 typedef struct mgmt_ack mgmt_ack_t;
@@ -135,10 +149,15 @@ typedef struct mgmt_ack mgmt_ack_t;
  * zvol rebuild related state
  */
 enum zvol_rebuild_status {
-	ZVOL_REBUILDING_INIT,		/* rebuilding initiated on zvol */
-	ZVOL_REBUILDING_IN_PROGRESS,	/* zvol is rebuilding */
-	ZVOL_REBUILDING_DONE,		/* done with rebuilding */
-	ZVOL_REBUILDING_FAILED		/* Rebuilding failed */
+	ZVOL_REBUILDING_INIT,		/* rebuilding can be initiated */
+	ZVOL_REBUILDING_SNAP,		/* zvol is rebuilding snapshots */
+	ZVOL_REBUILDING_AFS,		/* zvol is rebuilding active dataset */
+	ZVOL_REBUILDING_DONE,		/* Rebuilding completed with success */
+
+	/* errored during rebuilding, but not completed */
+	ZVOL_REBUILDING_ERRORED,
+
+	ZVOL_REBUILDING_FAILED		/* Rebuilding completed with error */
 } __attribute__((packed));
 
 typedef enum zvol_rebuild_status zvol_rebuild_status_t;
@@ -146,8 +165,8 @@ typedef enum zvol_rebuild_status zvol_rebuild_status_t;
  * zvol status
  */
 enum zvol_status {
-	ZVOL_STATUS_HEALTHY,		/* zvol has latest data */
-	ZVOL_STATUS_DEGRADED		/* zvol is missing some data */
+	ZVOL_STATUS_DEGRADED,		/* zvol is missing some data */
+	ZVOL_STATUS_HEALTHY		/* zvol has latest data */
 } __attribute__((packed));
 
 typedef enum zvol_status zvol_status_t;
@@ -158,6 +177,21 @@ struct zrepl_status_ack {
 } __attribute__((packed));
 
 typedef struct zrepl_status_ack zrepl_status_ack_t;
+
+struct zvol_op_resize_data {
+	char	volname[MAX_NAME_LEN];	/* zvol to resize */
+	uint64_t size;			/* new size of zvol */
+} __attribute__((packed));
+
+typedef struct zvol_op_resize_data zvol_op_resize_data_t;
+
+struct zvol_op_stat {
+	char		label[24];	/* name of the stat */
+	uint64_t	value;		/* value of the stat */
+} __attribute__((packed));
+
+typedef struct zvol_op_stat zvol_op_stat_t;
+
 /*
  * Describes chunk of data following this header.
  *
@@ -173,6 +207,23 @@ struct zvol_io_rw_hdr {
 	uint64_t	io_num;
 	uint64_t	len;
 } __attribute__((packed));
+
+struct zvol_snapshot_list {
+	uint64_t zvol_guid;	/* Replica identity */
+	uint64_t data_len;	/* SNAP_LIST response data length */
+
+	/*
+	 * Error code, if any error happened while
+	 * executing SNAP_LIST opcode at replica
+	 */
+	int error;
+	char data[0];		/* SNAP_LIST response data */
+};
+
+#define	SLIST_FOREACH_SAFE(var, head, field, tvar)			\
+	for ((var) = SLIST_FIRST((head));				\
+	    (var) && ((tvar) = SLIST_NEXT((var), field), 1);		\
+	    (var) = (tvar))
 
 #ifdef	__cplusplus
 }
