@@ -54,7 +54,6 @@ jobs:
             sudo sh -c 'echo "/tmp/core.%e.%p.%h.%t" > /proc/sys/kernel/core_pattern';
             export FIO_SRCDIR=$PWD/../fio;
             sudo -E bash ./tests/cbtest/script/test_uzfs.sh -T all
-            docker login -u $DOCKER_USER -p $DOCKER_PASS
             sudo -E bash ./build_image.sh
             bash <(curl -s https://codecov.io/bash)
   build_tag_1:
