@@ -14,4 +14,3 @@ AC_DEFUN([ZFS_AC_CONFIG_USER_LIBAIO], [
 		AC_MSG_ERROR([Missing linux AIO library. Install libaio-dev package.])
 	])
 ])
-

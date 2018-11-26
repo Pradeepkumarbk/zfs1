@@ -66,7 +66,9 @@ typedef struct uzfs_monitor {
     _UZFS_IOC(ZFS_IOC_RECV_NEW, 1, 1, "resumable receive")                     \
     _UZFS_IOC(ZFS_IOC_SEND_PROGRESS, 0, 0, "print zfs send stats")             \
     _UZFS_IOC(ZFS_IOC_VDEV_ADD, 1, 0, "add vdev to the pool")                  \
-    _UZFS_IOC(ZFS_IOC_VDEV_REMOVE, 1, 0, "remove vdev from the pool")
+    _UZFS_IOC(ZFS_IOC_VDEV_REMOVE, 1, 0, "remove vdev from the pool")          \
+    _UZFS_IOC(ZFS_IOC_ERROR_LOG, 0, 0, "get the error log")
+
 
 #define	MAX_NVLIST_SRC_SIZE (128 * 1024 * 1024)
 
@@ -81,6 +83,7 @@ extern int libuzfs_client_init(libzfs_handle_t *g_zfs);
 extern int uzfs_recv_response(int fd, zfs_cmd_t *zc);
 extern int uzfs_client_init(const char *sock_path);
 extern int is_main_thread(void);
+int uzfs_ioc_stats(zfs_cmd_t *zc, nvlist_t *nvl);
 
 extern int do_sendfd(int sock, int fd);
 extern int do_recvfd(int sock);

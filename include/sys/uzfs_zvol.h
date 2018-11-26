@@ -53,7 +53,12 @@ typedef struct zvol_rebuild_info {
 	zvol_rebuild_status_t zv_rebuild_status; /* zvol rebuilding status */
 	uint64_t rebuild_bytes;
 	uint16_t rebuild_cnt;
+
+	/* peer replica cnt whose rebuild is done either success or failure */
 	uint16_t rebuild_done_cnt;
+
+	/* peer replica cnt whose rebuild is done and failure */
+	uint16_t rebuild_failed_cnt;
 } zvol_rebuild_info_t;
 
 /*
@@ -77,7 +82,10 @@ struct zvol_state {
 	 * This should not be greater than volblocksize
 	 */
 	uint64_t zv_metavolblocksize;
+
+	/* Don't use status directly. Use getter/setter of zvol_info */
 	zvol_status_t zv_status;		/* zvol status */
+	kmutex_t rebuild_mtx;
 	zvol_rebuild_info_t rebuild_info;
 };
 
@@ -88,15 +96,25 @@ typedef struct zvol_state zvol_state_t;
 #define	UZFS_IO_READ_FAIL	2
 #define	UZFS_IO_MREAD_FAIL	3
 
-#define	ZVOL_IS_DEGRADED(zv)	(zv->zv_status == ZVOL_STATUS_DEGRADED)
-#define	ZVOL_IS_REBUILDING(zv)	\
-	(zv->rebuild_info.zv_rebuild_status == ZVOL_REBUILDING_IN_PROGRESS)
-#define	ZVOL_IS_REBUILDED(zv)	\
+#define	ZINFO_IS_HEALTHY(zinfo)		(ZVOL_IS_HEALTHY(zinfo->main_zv))
+#define	ZINFO_IS_DEGRADED(zinfo)	(!(ZINFO_IS_HEALTHY(zinfo)))
+#define	ZVOL_IS_DEGRADED(zv)		(zv->zv_status == ZVOL_STATUS_DEGRADED)
+#define	ZVOL_IS_HEALTHY(zv)		(zv->zv_status == ZVOL_STATUS_HEALTHY)
+
+#define	ZVOL_IS_REBUILDING(zv)		\
+	((zv->rebuild_info.zv_rebuild_status == ZVOL_REBUILDING_SNAP) || \
+	(zv->rebuild_info.zv_rebuild_status == ZVOL_REBUILDING_AFS))
+#define	ZVOL_IS_REBUILDING_AFS(zv)		\
+	(zv->rebuild_info.zv_rebuild_status == ZVOL_REBUILDING_AFS)
+#define	ZVOL_IS_REBUILDED(zv)		\
 	(zv->rebuild_info.zv_rebuild_status == ZVOL_REBUILDING_DONE)
+#define	ZVOL_IS_REBUILDING_ERRORED(zv)	\
+	(zv->rebuild_info.zv_rebuild_status == ZVOL_REBUILDING_ERRORED)
 #define	ZVOL_IS_REBUILDING_FAILED(zv)	\
 	(zv->rebuild_info.zv_rebuild_status == ZVOL_REBUILDING_FAILED)
 
 extern int zvol_get_data(void *arg, lr_write_t *lr, char *buf, zio_t *zio);
+const char *rebuild_status_to_str(zvol_rebuild_status_t status);
 
 /*
  * writes data and metadata

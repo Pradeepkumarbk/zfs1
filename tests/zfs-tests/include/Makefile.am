@@ -1,5 +1,5 @@
 pkgdatadir = $(datadir)/@PACKAGE@/zfs-tests/include
-dist_pkgdata_SCRIPTS = \
+dist_pkgdata_DATA = \
 	commands.cfg \
 	default.cfg \
 	libtest.shlib \
@@ -10,4 +10,4 @@ dist_pkgdata_SCRIPTS = \
 EXTRA_DIST=default.cfg.in
 
 distclean-local::
-	-$(RM) $(dist_pkgdata_SCRIPTS)
+	-$(RM) default.cfg

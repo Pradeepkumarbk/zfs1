@@ -213,7 +213,7 @@ static zvol_state_t *
 zvol_find_by_name_hash(const char *name, uint64_t hash, int mode)
 {
 	zvol_state_t *zv;
-	struct hlist_node *p;
+	struct hlist_node *p = NULL;
 
 	mutex_enter(&zvol_state_lock);
 	hlist_for_each(p, ZVOL_HT_HEAD(hash)) {
@@ -326,6 +326,84 @@ zvol_create_cb(objset_t *os, void *arg, cred_t *cr, dmu_tx_t *tx)
 	VERIFY(uzfs_zvol_create_meta(os, volblocksize, volblocksize, tx) == 0);
 #endif
 }
+
+#if !defined(_KERNEL)
+
+static const char *
+status_to_str(zvol_info_t *zv)
+{
+	zvol_rebuild_status_t rebuild_status;
+	if (zv->mgmt_conn == NULL)
+		return ("Offline");
+	if ((zv->is_io_receiver_created == 0) ||
+	    (zv->is_io_ack_sender_created == 0))
+		return ("Offline");
+	if (ZINFO_IS_HEALTHY(zv))
+		return ("Healthy");
+	rebuild_status = zv->main_zv->rebuild_info.zv_rebuild_status;
+	if ((rebuild_status != ZVOL_REBUILDING_INIT) &&
+	    (rebuild_status != ZVOL_REBUILDING_DONE))
+		return ("Rebuilding");
+	return ("Degraded");
+}
+
+int
+uzfs_ioc_stats(zfs_cmd_t *zc, nvlist_t *nvl)
+{
+	zvol_info_t *zv = NULL;
+
+	(void) mutex_enter(&zvol_list_mutex);
+	SLIST_FOREACH(zv, &zvol_list, zinfo_next) {
+
+		/*
+		 * No need to take lock of zv, as long as this is part of list
+		 */
+		if (zc->zc_name[0] == '\0' ||
+		    (uzfs_zvol_name_compare(zv, zc->zc_name) == 0)) {
+			nvlist_t *innvl = fnvlist_alloc();
+
+			fnvlist_add_string(innvl, "name", zv->name);
+
+			fnvlist_add_string(innvl, "status",
+			    status_to_str(zv));
+
+			fnvlist_add_string(innvl, "rebuildStatus",
+			    rebuild_status_to_str(
+			    zv->main_zv->rebuild_info.zv_rebuild_status));
+
+			fnvlist_add_uint64(innvl, "isIOAckSenderCreated",
+			    zv->is_io_ack_sender_created);
+			fnvlist_add_uint64(innvl, "isIOReceiverCreated",
+			    zv->is_io_receiver_created);
+			fnvlist_add_uint64(innvl, "runningIONum",
+			    zv->running_ionum);
+			fnvlist_add_uint64(innvl, "checkpointedIONum",
+			    zv->checkpointed_ionum);
+			fnvlist_add_uint64(innvl, "degradedCheckpointedIONum",
+			    zv->degraded_checkpointed_ionum);
+			fnvlist_add_uint64(innvl, "checkpointedTime",
+			    zv->checkpointed_time);
+
+			fnvlist_add_uint64(innvl, "rebuildBytes",
+			    zv->main_zv->rebuild_info.rebuild_bytes);
+			fnvlist_add_uint64(innvl, "rebuildCnt",
+			    zv->main_zv->rebuild_info.rebuild_cnt);
+			fnvlist_add_uint64(innvl, "rebuildDoneCnt",
+			    zv->main_zv->rebuild_info.rebuild_done_cnt);
+			fnvlist_add_uint64(innvl, "rebuildFailedCnt",
+			    zv->main_zv->rebuild_info.rebuild_failed_cnt);
+
+			fnvlist_add_nvlist(nvl, zv->name, innvl);
+			fnvlist_free(innvl);
+			if (zc->zc_name[0] != '\0')
+				break;
+		}
+	}
+	(void) mutex_exit(&zvol_list_mutex);
+
+	return (0);
+}
+#endif
 
 /*
  * ZFS_IOC_OBJSET_STATS entry point.
@@ -465,7 +543,7 @@ zvol_set_volsize(const char *name, uint64_t volsize)
 	zvol_info_t *zinfo = uzfs_zinfo_lookup(name);
 	if (zinfo == NULL)
 		return (SET_ERROR(ENOENT));
-	zv = zinfo->zv;
+	zv = zinfo->main_zv;
 #else
 	zv = zvol_find_by_name(name, RW_READER);
 	ASSERT(zv == NULL || (MUTEX_HELD(&zv->zv_state_lock) &&
@@ -515,7 +593,7 @@ out:
 	}
 
 #if !defined(_KERNEL)
-	uzfs_zinfo_drop_refcnt(zinfo, B_FALSE);
+	uzfs_zinfo_drop_refcnt(zinfo);
 #else
 	if (zv != NULL)
 		mutex_exit(&zv->zv_state_lock);
@@ -1699,7 +1777,7 @@ zvol_probe(dev_t dev, int *part, void *arg)
 	struct kobject *kobj;
 
 	zv = zvol_find_by_dev(dev);
-	kobj = zv ? get_disk(zv->zv_disk) : NULL;
+	kobj = zv ? get_disk_and_module(zv->zv_disk) : NULL;
 	ASSERT(zv == NULL || MUTEX_HELD(&zv->zv_state_lock));
 	if (zv)
 		mutex_exit(&zv->zv_state_lock);
@@ -1806,7 +1884,7 @@ zvol_alloc(dev_t dev, const char *name)
 	blk_queue_set_read_ahead(zv->zv_queue, 1);
 
 	/* Disable write merging in favor of the ZIO pipeline. */
-	queue_flag_set_unlocked(QUEUE_FLAG_NOMERGES, zv->zv_queue);
+	blk_queue_flag_set(QUEUE_FLAG_NOMERGES, zv->zv_queue);
 
 	zv->zv_disk = alloc_disk(ZVOL_MINORS);
 	if (zv->zv_disk == NULL)
@@ -1957,12 +2035,12 @@ zvol_create_minor_impl(const char *name)
 	blk_queue_max_discard_sectors(zv->zv_queue,
 	    (zvol_max_discard_blocks * zv->zv_volblocksize) >> 9);
 	blk_queue_discard_granularity(zv->zv_queue, zv->zv_volblocksize);
-	queue_flag_set_unlocked(QUEUE_FLAG_DISCARD, zv->zv_queue);
+	blk_queue_flag_set(QUEUE_FLAG_DISCARD, zv->zv_queue);
 #ifdef QUEUE_FLAG_NONROT
-	queue_flag_set_unlocked(QUEUE_FLAG_NONROT, zv->zv_queue);
+	blk_queue_flag_set(QUEUE_FLAG_NONROT, zv->zv_queue);
 #endif
 #ifdef QUEUE_FLAG_ADD_RANDOM
-	queue_flag_clear_unlocked(QUEUE_FLAG_ADD_RANDOM, zv->zv_queue);
+	blk_queue_flag_clear(QUEUE_FLAG_ADD_RANDOM, zv->zv_queue);
 #endif
 
 	if (spa_writeable(dmu_objset_spa(os))) {

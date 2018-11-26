@@ -397,7 +397,7 @@ zed_rate_limit()
 
     zed_lock "${lockfile}" "${lockfile_fd}"
     time_now="$(date +%s)"
-    time_prev="$(egrep "^[0-9]+;${tag}\$" "${statefile}" 2>/dev/null \
+    time_prev="$(grep -E "^[0-9]+;${tag}\$" "${statefile}" 2>/dev/null \
         | tail -1 | cut -d\; -f1)"
 
     if [ -n "${time_prev}" ] \
@@ -406,7 +406,7 @@ zed_rate_limit()
     else
         umask_bak="$(umask)"
         umask 077
-        egrep -v "^[0-9]+;${tag}\$" "${statefile}" 2>/dev/null \
+        grep -E -v "^[0-9]+;${tag}\$" "${statefile}" 2>/dev/null \
             > "${statefile}.$$"
         echo "${time_now};${tag}" >> "${statefile}.$$"
         mv -f "${statefile}.$$" "${statefile}"
@@ -436,5 +436,25 @@ zed_guid_to_pool()
 	guid=$(printf "%llu" "$1")
 	if [ ! -z "$guid" ] ; then
 		$ZPOOL get -H -ovalue,name guid | awk '$1=='"$guid"' {print $2}'
+	fi
+}
+
+# zed_exit_if_ignoring_this_event
+#
+# Exit the script if we should ignore this event, as determined by
+# $ZED_SYSLOG_SUBCLASS_INCLUDE and $ZED_SYSLOG_SUBCLASS_EXCLUDE in zed.rc.
+# This function assumes you've imported the normal zed variables.
+zed_exit_if_ignoring_this_event()
+{
+	if [ -n "${ZED_SYSLOG_SUBCLASS_INCLUDE}" ]; then
+	    eval "case ${ZEVENT_SUBCLASS} in
+	    ${ZED_SYSLOG_SUBCLASS_INCLUDE});;
+	    *) exit 0;;
+	    esac"
+	elif [ -n "${ZED_SYSLOG_SUBCLASS_EXCLUDE}" ]; then
+	    eval "case ${ZEVENT_SUBCLASS} in
+	    ${ZED_SYSLOG_SUBCLASS_EXCLUDE}) exit 0;;
+	    *);;
+	    esac"
 	fi
 }

@@ -25,6 +25,11 @@
 #include <uzfs_rebuilding.h>
 #include <sys/dsl_dataset.h>
 #include <uzfs_io.h>
+#include <zrepl_mgmt.h>
+
+#if DEBUG
+inject_error_t	inject_error;
+#endif
 
 #define	GET_NEXT_CHUNK(chunk_io, offset, len, end)		\
 	do {							\
@@ -81,6 +86,7 @@ uzfs_write_data(zvol_state_t *zv, char *buf, uint64_t offset, uint64_t len,
 	 * If trying IO on fresh zvol before metadata granularity is set return
 	 * error.
 	 */
+
 	if (zv->zv_metavolblocksize == 0)
 		return (EINVAL);
 	ASSERT3P(zv->zv_metavolblocksize, !=, 0);
@@ -95,6 +101,12 @@ uzfs_write_data(zvol_state_t *zv, char *buf, uint64_t offset, uint64_t len,
 	sync = (dmu_objset_syncprop(os) == ZFS_SYNC_ALWAYS) ? 1 : 0;
 	ASSERT3P(zv->zv_volmetablocksize, !=, 0);
 
+#if DEBUG
+	if (inject_error.delay.pre_uzfs_write_data == 1) {
+		LOG_DEBUG("delaying write");
+		sleep(10);
+	}
+#endif
 	if (metadata != NULL) {
 		mlen = get_metadata_len(zv, offset, len);
 		VERIFY((mlen % metadatasize) == 0);
@@ -113,7 +125,7 @@ uzfs_write_data(zvol_state_t *zv, char *buf, uint64_t offset, uint64_t len,
 
 	if (is_rebuild) {
 		VERIFY(ZVOL_IS_DEGRADED(zv) && (ZVOL_IS_REBUILDING(zv) ||
-		    ZVOL_IS_REBUILDING_FAILED(zv)));
+		    ZVOL_IS_REBUILDING_ERRORED(zv)));
 		count = uzfs_get_nonoverlapping_ondisk_blks(zv, offset,
 		    len, metadata, (void **)&chunk_io);
 		if (!count)
@@ -341,6 +353,42 @@ uzfs_flush_data(zvol_state_t *zv)
 	zil_commit(zv->zv_zilog, ZVOL_OBJ);
 }
 
+static const char *
+zvol_status_to_str(zvol_status_t status)
+{
+	switch (status) {
+	case ZVOL_STATUS_HEALTHY:
+		return ("HEALTHY");
+	case ZVOL_STATUS_DEGRADED:
+		return ("DEGRADED");
+	default:
+		break;
+	}
+	return ("UNKNOWN");
+}
+
+const char *
+rebuild_status_to_str(zvol_rebuild_status_t status)
+{
+	switch (status) {
+	case ZVOL_REBUILDING_INIT:
+		return ("INIT");
+	case ZVOL_REBUILDING_SNAP:
+		return ("SNAP REBUILD INPROGRESS");
+	case ZVOL_REBUILDING_AFS:
+		return ("ACTIVE DATASET REBUILD INPROGRESS");
+	case ZVOL_REBUILDING_DONE:
+		return ("DONE");
+	case ZVOL_REBUILDING_ERRORED:
+		return ("ERRORED");
+	case ZVOL_REBUILDING_FAILED:
+		return ("FAILED");
+	default:
+		break;
+	}
+	return ("UNKNOWN");
+}
+
 /*
  * Caller is responsible for locking to ensure
  * synchronization across below four functions
@@ -348,6 +396,8 @@ uzfs_flush_data(zvol_state_t *zv)
 void
 uzfs_zvol_set_status(zvol_state_t *zv, zvol_status_t status)
 {
+	LOG_INFO("zvol %s status change: %s -> %s", zv->zv_name,
+	    zvol_status_to_str(zv->zv_status), zvol_status_to_str(status));
 	zv->zv_status = status;
 }
 
@@ -356,9 +406,13 @@ uzfs_zvol_get_status(zvol_state_t *zv)
 {
 	return (zv->zv_status);
 }
+
 void
 uzfs_zvol_set_rebuild_status(zvol_state_t *zv, zvol_rebuild_status_t status)
 {
+	LOG_INFO("zvol %s rebuild status change: %s -> %s", zv->zv_name,
+	    rebuild_status_to_str(zv->rebuild_info.zv_rebuild_status),
+	    rebuild_status_to_str(status));
 	zv->rebuild_info.zv_rebuild_status = status;
 }
 
@@ -438,6 +492,13 @@ uzfs_update_metadata_granularity(zvol_state_t *zv, uint64_t tgt_block_size)
 
 	if (tgt_block_size == zv->zv_metavolblocksize)
 		return (0);	/* nothing to update */
+
+	if ((zv->zv_metavolblocksize != 0) &&
+	    (tgt_block_size != zv->zv_metavolblocksize)) {
+		LOG_ERR("Update metadata granularity from old %lu to new %lu "
+		    "failed", zv->zv_metavolblocksize, tgt_block_size);
+		return (-1);
+	}
 
 	tx = dmu_tx_create(zv->zv_objset);
 	dmu_tx_hold_zap(tx, ZVOL_ZAP_OBJ, TRUE, NULL);

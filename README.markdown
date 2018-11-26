@@ -3,7 +3,7 @@
 ZFS on Linux is an advanced file system and volume manager which was originally
 developed for Solaris and is now maintained by the OpenZFS community.
 
-[![codecov](https://codecov.io/gh/cloudbytestorage/ZoL/branch/zfs-0.7-release/graph/badge.svg?token=i6wwszvnyt)](https://codecov.io/gh/cloudbytestorage/ZoL)
+[![codecov](https://codecov.io/gh/zfsonlinux/zfs/branch/master/graph/badge.svg)](https://codecov.io/gh/zfsonlinux/zfs)
 
 # Official Resources
   * [Site](http://zfsonlinux.org)
@@ -23,7 +23,7 @@ In addition to standard dependencies of ZFS on Linux project following
 packages need to be installed:
 
 ```bash
-sudo apt-get install libaio-dev libgtest-dev cmake libjemalloc-dev
+sudo apt-get install libaio-dev libgtest-dev cmake libjemalloc-dev libjson-c-dev
 ```
 
 Google test framework library does not have a binary package so it needs to be compiled manually:
@@ -77,11 +77,15 @@ A docker image with zrepl *for testing purpose* can be built as follows.
 The privileged parameter when starting container is to enable process
 tracing inside the container. The last command gets you a shell inside
 the container which can be used for debugging, running zfs & zpool commands,
-etc.
+etc. Explanation of the two mounted volumes follows:
+
+ * /dev: All devices from host are visible inside the container so we can create pools on arbitrary block device.
+ * /tmp: This is a directory where core is dumped in case of a fatal failure. We make it persistent in order to preserve core dumps for later debugging.
 
 ```bash
 sudo docker build -t my-cstor .
-sudo docker run --privileged -it my-cstor
+sudo mkdir /tmp/cstor
+sudo docker run --privileged -it -v /dev:/dev -v /run/udev:/run/udev --mount source=cstortmp,target=/tmp my-cstor
 sudo docker exec -it <container-id> /bin/bash
 ```
 
@@ -91,6 +95,30 @@ You could also run local image repo and upload the test image there:
 sudo docker run -d -p 5000:5000 --restart=always --name registry registry:2
 sudo docker build -t localhost:5000/my-cstor .
 sudo docker push localhost:5000/my-cstor
+```
+
+# Troubleshooting
+
+In order to print debug messages start zrepl with `-l debug` argument. If
+running zrepl in container with standard entrypoint.sh script, set env
+variable LOGLEVEL=debug. To do the same when running zrepl on k8s cluster
+use patch command to insert the same env variable to pod definition.
+Details differ based on how zrepl container was deployed on k8s cluster:
+
+```bash
+kubectl patch deployment cstor-deployment-name --patch "$(cat patch.yaml)"
+```
+
+where patch.yaml content is:
+```
+spec:
+  template:
+    spec:
+      containers:
+      - name: cstor-container-name
+        env:
+        - name: LOGLEVEL
+          value: "debug"
 ```
 
 # Caveats

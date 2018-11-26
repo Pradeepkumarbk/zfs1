@@ -10,10 +10,15 @@ RUN apt-get clean && \
     apt-get update && \
     apt-get install -y apt-utils libaio1 libjemalloc1
 
+COPY entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
 COPY cmd/zrepl/.libs/zrepl /usr/local/bin/
 COPY cmd/zpool/.libs/zpool /usr/local/bin/
 COPY cmd/zfs/.libs/zfs /usr/local/bin/
+COPY cmd/zstreamdump/.libs/zstreamdump /usr/local/bin/
 
+COPY lib/libzrepl/.libs/*.so* /usr/lib/
 COPY lib/libzpool/.libs/*.so* /usr/lib/
 COPY lib/libuutil/.libs/*.so* /usr/lib/
 COPY lib/libnvpair/.libs/*.so* /usr/lib/
@@ -28,5 +33,5 @@ LABEL org.label-schema.vcs-url="https://github.com/openebs/cstor"
 LABEL org.label-schema.schema-version="1.0"
 LABEL org.label-schema.build-date=$BUILD_DATE
 
-ENTRYPOINT ["/usr/local/bin/zrepl"]
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 EXPOSE 7676

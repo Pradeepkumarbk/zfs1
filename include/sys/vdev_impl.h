@@ -127,7 +127,6 @@ struct vdev_queue {
 	hrtime_t	vq_io_delta_ts;
 	zio_t		vq_io_search; /* used as local for stack reduction */
 	kmutex_t	vq_lock;
-	uint64_t	vq_lastoffset;
 };
 
 /*
@@ -239,6 +238,7 @@ struct vdev {
 	vdev_aux_t	vdev_label_aux;	/* on-disk aux state		*/
 	uint64_t	vdev_leaf_zap;
 	hrtime_t	vdev_mmp_pending; /* 0 if write finished	*/
+	uint64_t	vdev_mmp_kstat_id;	/* to find kstat entry */
 
 	/*
 	 * For DTrace to work in userland (libzpool) context, these fields must
@@ -255,8 +255,6 @@ struct vdev {
 	 * We rate limit ZIO delay and ZIO checksum events, since they
 	 * can flood ZED with tons of events when a drive is acting up.
 	 */
-#define	DELAYS_PER_SECOND 5
-#define	CHECKSUMS_PER_SECOND 5
 	zfs_ratelimit_t vdev_delay_rl;
 	zfs_ratelimit_t vdev_checksum_rl;
 };
