@@ -4,6 +4,9 @@ jobs:
     branches:
       only:
         - zfs-0.7-release
+    filters:  # required since `deploy` has tag filters AND requires `build`
+      tags:
+      only: /.*/
 jobs:
   build_tag_0:
     machine: 
