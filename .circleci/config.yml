@@ -100,11 +100,11 @@ workflows:
       #     filters:
       #       tags:
       #         only: /.*/
-      - build_tag_0:
-            filters:
-              tags:
-                only: /.*/
-      - build_tag_1:
-            filters:
-              tags:
-                only: /.*/
+    - build_tag_0:
+        filters:
+          tags:
+            only: /.*/
+    - build_tag_1:
+        filters:
+          tags:
+            only: /.*/
