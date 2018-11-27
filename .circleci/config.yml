@@ -1,12 +1,9 @@
 version: 2
-jobs:
-  build:
-    branches:
-      only:
-        - zfs-0.7-release
-    filters:  # required since `deploy` has tag filters AND requires `build`
-      tags:
-      only: /.*/
+# jobs:
+#   build:
+#     branches:
+#       only:
+#         - zfs-0.7-release
 jobs:
   build_tag_0:
     machine: 
@@ -99,5 +96,15 @@ workflows:
   version: 2
   TAGS:
     jobs:
-      - build_tag_0
-      - build_tag_1
+      # - build:
+      #     filters:
+      #       tags:
+      #         only: /.*/
+      - build_tag_0:
+            filters:
+              tags:
+                only: /.*/
+      - build_tag_1:
+            filters:
+              tags:
+                only: /.*/
