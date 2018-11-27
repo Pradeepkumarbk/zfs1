@@ -32,14 +32,14 @@ sudo docker build --help
 echo "Build image ${REPO_NAME}:ci with BUILD_DATE=${BUILD_DATE}"
 cd docker && \
  sudo docker build -f Dockerfile.base -t ${REPO_NAME}:ci --build-arg BUILD_DATE=${BUILD_DATE} . && \
- IMAGE_REPO=${REPO_NAME} ./push && \
+ CIRCLE_PROJECT_REPONAME=${REPO_NAME} ./push && \
  cd ..
 
 REPO_NAME="pradeepkumar95/cstor-pool"
 echo "Build image ${REPO_NAME}:ci with BUILD_DATE=${BUILD_DATE}"
 cd docker && \
  sudo docker build -f Dockerfile -t ${REPO_NAME}:ci --build-arg BUILD_DATE=${BUILD_DATE} . && \
- IMAGE_REPO=${REPO_NAME} ./push && \
+ CIRCLE_PROJECT_REPONAME=${REPO_NAME} ./push1 && \
  cd ..
 
 rm -rf ./docker/zfs
