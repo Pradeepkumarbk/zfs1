@@ -22,7 +22,8 @@ echo qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq
 # Determine the current branch
 CURRENT_BRANCH=""
 echo qqqqqqqqqqqqqqqfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ${CURRENT_BRANCH}
-if [ ${CIRCLE_BRANCH} = "" ]; then
+if [ -z ${CIRCLE_BRANCH} ]; 
+then
   CURRENT_BRANCH=${CIRCLE_TAG}
   echo wwwwwwwwwwwwwwwwwwwwwwwwwfffffwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwffffwwwvvvvvwwwwwwwwwwwwwwwwwwwwwww ${CURRENT_BRANCH}
 else
