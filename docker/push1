@@ -29,7 +29,7 @@ then
   CURRENT_BRANCH=$(git branch | grep \* | cut -d ' ' -f2)
   echo wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwffffwwwvvvvvwwwwwwwwwwwwwwwwwwwwwww ${CURRENT_BRANCH}
 else
-  CURRENT_BRANCH=${CIRCLE_BRANCH}
+  CURRENT_BRANCH=${CIRCLE_TAG}
   echo wwwwwwwwwwwwwwwwwwwwwwwwwfffffwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwffffwwwvvvvvwwwwwwwwwwwwwwwwwwwwwww ${CURRENT_BRANCH}
 fi
 echo iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii ${CURRENT_BRANCH}
