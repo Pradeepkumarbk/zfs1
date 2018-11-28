@@ -23,10 +23,14 @@ echo qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq
 CURRENT_BRANCH=""
 echo qqqqqqqqqqqqqqqfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ${CURRENT_BRANCH}
 if [ -z ${TRAVIS_BRANCH} ];
+echo wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww ${TRAVIS_BRANCH}
+echo wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwvvvvvwwwwwwwwwwwwwwwwwwwwwww ${CURRENT_BRANCH}
 then
   CURRENT_BRANCH=$(git branch | grep \* | cut -d ' ' -f2)
+  echo wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwffffwwwvvvvvwwwwwwwwwwwwwwwwwwwwwww ${CURRENT_BRANCH}
 else
   CURRENT_BRANCH=${TRAVIS_BRANCH}
+  echo wwwwwwwwwwwwwwwwwwwwwwwwwfffffwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwffffwwwvvvvvwwwwwwwwwwwwwwwwwwwwwww ${CURRENT_BRANCH}
 fi
 echo iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii ${CURRENT_BRANCH}
 
