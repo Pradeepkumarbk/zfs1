@@ -22,7 +22,9 @@ echo qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq
 # Determine the current branch
 CURRENT_BRANCH=""
 echo qqqqqqqqqqqqqqqfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ${CURRENT_BRANCH}
-if [ -z ${CIRCLE_BRANCH} ]; 
+echo qqqqqqqqqqqqqqqfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ${CIRCLE_TAG}
+
+if [ -z ${CIRCLE_BRANCH} ];
 then
   CURRENT_BRANCH=${CIRCLE_TAG}
   echo wwwwwwwwwwwwwwwwwwwwwwwwwfffffwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwffffwwwvvvvvwwwwwwwwwwwwwwwwwwwwwww ${CURRENT_BRANCH}
@@ -30,6 +32,7 @@ else
   CURRENT_BRANCH=$(git branch | grep \* | cut -d ' ' -f2)
   echo wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwffffwwwvvvvvwwwwwwwwwwwwwwwwwwwwwww ${CURRENT_BRANCH}
 fi
+# echo iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii ${CURRENT_BRANCH}
 # if [ -z ${CIRCLE_BRANCH} ];
 # echo wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww ${CIRCLE_BRANCH}
 # echo wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwvvvvvwwwwwwwwwwwwwwwwwwwwwww ${CURRENT_BRANCH}
