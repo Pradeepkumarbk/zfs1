@@ -24,6 +24,16 @@ CURRENT_BRANCH=""
 echo qqqqqqqqqqqqqqqfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ${CURRENT_BRANCH}
 echo qqqqqqqqqqqqqqqfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff ${CIRCLE_TAG}
 
+function TagAndPushImage() {
+  REPO="$1"
+  TAG="$2"
+  
+  IMAGE_URI="${REPO}:${TAG}";
+  sudo docker tag ${IMAGEID} ${IMAGE_URI};
+  echo " push ${IMAGE_URI}";
+  sudo docker push ${IMAGE_URI};
+}
+
 if [ -z ${CIRCLE_BRANCH} ];
 then
   # CURRENT_BRANCH=${CIRCLE_TAG}
@@ -81,15 +91,15 @@ echo iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii
 # echo "Set the fixed ci image tag as: ${CI_TAG}"
 # echo "Set the build/unique image tag as: ${BUILD_TAG}"
 
-function TagAndPushImage() {
-  REPO="$1"
-  TAG="$2"
+# function TagAndPushImage() {
+#   REPO="$1"
+#   TAG="$2"
   
-  IMAGE_URI="${REPO}:${TAG}";
-  sudo docker tag ${IMAGEID} ${IMAGE_URI};
-  echo " push ${IMAGE_URI}";
-  sudo docker push ${IMAGE_URI};
-}
+#   IMAGE_URI="${REPO}:${TAG}";
+#   sudo docker tag ${IMAGEID} ${IMAGE_URI};
+#   echo " push ${IMAGE_URI}";
+#   sudo docker push ${IMAGE_URI};
+# }
 
 # if [ ! -z "${DOCKER_USER}" ] && [ ! -z "${DOCKER_PASS}" ];
 # then
