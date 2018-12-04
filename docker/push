@@ -90,4 +90,3 @@ then
 else
   echo "No docker credentials provided. Skip uploading ${IMAGE_REPO} to quay";
 fi;
-
