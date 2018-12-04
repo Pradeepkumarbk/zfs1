@@ -33,18 +33,6 @@ CURRENT_BRANCH=""
 
 if [ -z ${TRAVIS_BRANCH} ];
 then
-  if [ ! -z "${DOCKER_USER}" ] && [ ! -z "${DOCKER_PASS}" ];
-  then
-    sudo docker login -u "${DOCKER_USER}" -p "${DOCKER_PASS}";
-    # Push with different tags if tagged as a release
-    # When github is tagged with a release, then Travis will
-    # set the release tag in env TRAVIS_TAG
-    TagAndPushImage "${IMAGE_REPO}" "${TRAVIS_TAG}"
-    TagAndPushImage "${IMAGE_REPO}" "latest"
-  else
-    echo "No docker credentials provided. Skip uploading ${CIRCLE_PROJECT_REPONAME} to docker hub";
-  fi;
-else
   CURRENT_BRANCH=$(git branch | grep \* | cut -d ' ' -f2)
   #Depending on the branch where builds are generated, 
   # set the tag CI (fixed) and build tags.
@@ -70,7 +58,18 @@ else
   else
     echo "No docker credentials provided. Skip uploading ${CIRCLE_PROJECT_REPONAME} to docker hub";
   fi;
-fi
+else
+  if [ ! -z "${DOCKER_USER}" ] && [ ! -z "${DOCKER_PASS}" ];
+  then
+    sudo docker login -u "${DOCKER_USER}" -p "${DOCKER_PASS}";
+    # Push with different tags if tagged as a release
+    # When github is tagged with a release, then Travis will
+    # set the release tag in env TRAVIS_TAG
+    TagAndPushImage "${IMAGE_REPO}" "${TRAVIS_TAG}"
+    TagAndPushImage "${IMAGE_REPO}" "latest"
+  else
+    echo "No docker credentials provided. Skip uploading ${CIRCLE_PROJECT_REPONAME} to docker hub";
+  fi;
 
 # Push ci image to quay.io for security scanning
 if [ ! -z "${QNAME}" ] && [ ! -z "${QPASS}" ]; 
@@ -91,3 +90,4 @@ then
 else
   echo "No docker credentials provided. Skip uploading ${IMAGE_REPO} to quay";
 fi;
+
